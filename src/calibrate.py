@@ -52,7 +52,11 @@ with open('./output/%s/setting.txt' % experiment_name, 'w') as f:
 # =                            datasets and models                             =
 # ==============================================================================
 
-source_train_data, target_train_data, source_test_data, target_test_data = utils.get_data(data_path, data_type)  
+source_train_data, target_train_data, source_test_data, target_test_data = utils.get_data(data_path, data_type)
+TODO: make Dataset: 
+#Dataset = partial(tl.DiskImageData, img_paths=paths, repeat=1, map_func=_map_func)  
+#dataset = Dataset(batch_size=batch_size)
+val_dataset = # for visualisation
 input_dim = source_train_data.shape[1]
 Enc, Dec_a, Dec_b, Disc = utils.get_models(model_name)
 Enc = partial(Enc, code_dim=code_dim)
@@ -120,15 +124,15 @@ G_step = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.5).minimize(G_loss, va
 D_step = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.5).minimize(D_loss, var_list=d_var)
 
 # summary
-summary = tl.summary({rec_loss_a: 'rec_loss_a',
+G_summary = tl.summary({rec_loss_a: 'rec_loss_a',
                       rec_loss_b: 'rec_loss_b',
                       rec_loss: 'rec_loss',
                       kld_loss_a: 'kld_loss_a',
                       kld_loss_b: 'kld_loss_b',
                       kld_loss: 'kld_loss',
                       adv_loss: 'adv_loss',
-                      G_loss: 'G_loss',
-                      wd_loss: 'wd_loss',
+                      G_loss: 'G_loss'})
+D_summary = tl.summary({wd_loss: 'wd_loss',
                       gp_loss: 'gp_loss',
                       D_loss: 'D_loss'})
 
@@ -155,12 +159,46 @@ except:
     sess.run(tf.global_variables_initializer())
 
 # train
+try:
 
+    it = -1
+    for ep in range(n_epochs):
+        dataset.reset()
+        it_per_epoch = it_in_epoch if it != -1 else -1
+        it_in_epoch = 0
+        for batch in dataset:
+            it += 1
+            it_in_epoch += 1
+
+            # batch data
+            batch_a, batch_b = batch
+
+            # train D
+            D_summary_opt, _ = sess.run([D_summary, D_step], feed_dict={input_a: batch_a, input_b:batch_b})
+            summary_writer.add_summary(D_summary_opt, it)
+            
+            # train G
+            g_summary_opt, _ = sess.run([G_summary, G_step], feed_dict={input_a: batch_a, input_b:batch_b})
+            summary_writer.add_summary(g_summary_opt, it)
+
+            # display
+            if (it + 1) % 1 == 0:
+                print("Epoch: (%3d) (%5d/%5d)" % (ep, it_in_epoch, it_per_epoch))
+                # plot val datawith scatter Hist
+            
+            if (it + 1) % 1000 == 0:
+                save_dir = './output/%s/sample_training' % experiment_name
+        save_path = saver.save(sess, '%s/Epoch_%d.ckpt' % (ckpt_dir, ep))
+        print('Model is saved in file: %s' % save_path)
+except:
+    traceback.print_exc()
+finally:
+    sess.close()
 
 
 
 # ==============================================================================
-# =                                 visualize                                  =
+# =                 visualize calibration on test data                         =
 # ==============================================================================
 pca = decomposition.PCA()
 pca.fit(target)
@@ -181,5 +219,5 @@ sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], projection_af
 
 
 # ==============================================================================
-# =                            save data and models                            =
+# =                                  save data                                 =
 # ==============================================================================

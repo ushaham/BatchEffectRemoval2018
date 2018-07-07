@@ -65,4 +65,62 @@ def standard_scale(X_train, X_test):
 
 def preProcessCytofData(data):
     return np.log(1+data)
+ 
+ 
+class MMD:
+    MMDTargetTrain = None
+    MMDTargetTrainSize = None
+    MMDTargetValidation = None
+    MMDTargetValidationSize = None
+    MMDTargetSampleSize = None
+    kernel = None
+    scales = None
+    weights = None
     
+    def __init__(self,
+                 MMDLayer,
+                 MMDTargetTrain,
+                 MMDTargetValidation_split=0.1,
+                 MMDTargetSampleSize=1000,
+                 n_neighbors = 25,
+                 scales = None,
+                 weights = None):
+        if scales == None:
+            print("setting scales using KNN")
+            med = np.zeros(20)
+            for ii in range(1,20):
+                sample = MMDTargetTrain[np.random.randint(MMDTargetTrain.shape[0], size=MMDTargetSampleSize),:]
+                nbrs = NearestNeighbors(n_neighbors=n_neighbors).fit(sample)
+                distances,dummy = nbrs.kneighbors(sample)
+                #nearest neighbor is the point so we need to exclude it
+                med[ii]=np.median(distances[:,1:n_neighbors])
+            med = np.median(med)  
+            scales = [med/2, med, med*2] # CyTOF    
+            print(scales)
+        scales = K.variable(value=np.asarray(scales))
+        if weights == None:
+            print("setting all scale weights to 1")
+            weights = K.eval(K.shape(scales)[0])
+        weights = K.variable(value=np.asarray(weights))
+        self.MMDLayer =  MMDLayer
+        MMDTargetTrain, MMDTargetValidation = train_test_split(MMDTargetTrain, test_size=MMDTargetValidation_split, random_state=42)
+        self.MMDTargetTrain = K.variable(value=MMDTargetTrain)
+        self.MMDTargetTrainSize = K.eval(K.shape(self.MMDTargetTrain)[0])
+        self.MMDTargetValidation = K.variable(value=MMDTargetValidation)
+        self.MMDTargetValidationSize = K.eval(K.shape(self.MMDTargetValidation)[0])
+        self.MMDTargetSampleSize = MMDTargetSampleSize
+        self.kernel = self.RaphyKernel
+        self.scales = scales
+        self.weights = weights
+
+    
+    #Calculate the MMD cost
+    def cost(self,source, target):
+        #calculate the 3 MMD terms
+        xx = self.kernel(source, source)
+        xy = self.kernel(source, target)
+        yy = self.kernel(target, target)
+        #calculate the bias MMD estimater (cannot be less than 0)
+        MMD = K.mean(xx) - 2 * K.mean(xy) + K.mean(yy)
+        #return the square root of the MMD because it optimizes better
+        return K.sqrt(MMD);
