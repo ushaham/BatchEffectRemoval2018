@@ -3,7 +3,7 @@ Created on Jul 6, 2018
 
 @author: urishaham
 Resnet code is based on: https://github.com/tensorflow/models/blob/master/official/resnet/resnet_model.py
-VAE code is based on https://github.com/LynnHo/VAE-Tensorflow
+VAE code, tflib, pylib are based on https://github.com/LynnHo/VAE-Tensorflow
 '''
 
 from functools import partial
