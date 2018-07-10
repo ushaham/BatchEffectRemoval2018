@@ -6,11 +6,17 @@ The script is based on https://github.com/LynnHo/VAE-Tensorflow
 WGAN-gp code is based on on https://github.com/LynnHo/DCGAN-LSGAN-WGAN-WGAN-GP-Tensorflow/blob/master/models_mnist.py
 
 '''
+import argparse
+import datetime
+import json
+from functools import partial
+import os.path
+import tensorflow as tf
 
 import models
 import utils
-import os.path
-import tensorflow as tf
+import pylib
+
 
 # ==============================================================================
 # =                                inputs arguments                            =
@@ -24,15 +30,15 @@ parser.add_argument('--code_dim', dest='code_dim', type=int, default=5, help='di
 parser.add_argument('--beta', dest='beta', type=float, default=.1, help="KL coefficient")
 parser.add_argument('--gamma', dest='gamma', type=float, default=1., help="adversarial loss coefficient")
 parser.add_argument('--delta', dest='delta', type=float, default=10., help="gp loss coefficient")
-parser.add_argument('--data_path', dest='datas_path', default='/Data', help="path to data folder")
-parser.add_argument('--data_type', dest='datas_type', default='cytof', help="type of data")
+parser.add_argument('--data_path', dest='data_path', default='./Data', help="path to data folder")
+parser.add_argument('--data_type', dest='data_type', default='cytof', help="type of data")
 
 parser.add_argument('--model', dest='model_name', default='cytof_basic')
 parser.add_argument('--experiment_name', dest='experiment_name', default=datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y"))
 
 args = parser.parse_args()
 
-epoch = args.epoch
+n_epochs = args.n_epochs
 batch_size = args.batch_size
 lr = args.lr
 code_dim = args.code_dim
@@ -53,16 +59,19 @@ with open('./output/%s/setting.txt' % experiment_name, 'w') as f:
 # ==============================================================================
 
 source_train_data, target_train_data, source_test_data, target_test_data = utils.get_data(data_path, data_type)
-TODO: make Dataset: 
-#Dataset = partial(tl.DiskImageData, img_paths=paths, repeat=1, map_func=_map_func)  
-#dataset = Dataset(batch_size=batch_size)
-val_dataset = # for visualisation
+source_train_dataset = utils.make_dataset(source_train_data)
+target_train_dataset = utils.make_dataset(target_train_data)
+s_iterator = source_train_dataset.make_initializable_iterator()
+s_next_element = s_iterator.get_next()
+t_iterator = target_train_dataset.make_initializable_iterator()
+t_next_element = t_iterator.get_next()
+
 input_dim = source_train_data.shape[1]
 Enc, Dec_a, Dec_b, Disc = utils.get_models(model_name)
 Enc = partial(Enc, code_dim=code_dim)
-Dec_a = partial(Dec_a, output_dim=inut_dim) 
-Dec_b = partial(Dec_b, output_dim=inut_dim)
-Disc = partial(Disc) 
+Dec_a = partial(Dec_a, output_dim=input_dim) 
+Dec_b = partial(Dec_b, output_dim=input_dim)
+
 
 # ==============================================================================
 # =                                    graph                                   =

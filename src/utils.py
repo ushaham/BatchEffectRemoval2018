@@ -1,27 +1,37 @@
+"""
+Created on Tue Jul 10 15:02:29 2018
 
+@author: urishaham
+"""
+
+import numpy as np
+import os.path
 import sklearn.preprocessing as prep
 import tensorflow as tf
+import models
+from numpy import *
+
 
 def get_data(path, data_type):
-    source_train_data_filename = path+"/source_train_data"
-    target_train_data_filename = path+"/target_train_data"
-    source_test_data_filename = path+"/source_test_data"
-    target_test_data_filename = path+"/source_test_data"
+    source_train_data_filename = path+"/source_train_data.csv"
+    target_train_data_filename = path+"/target_train_data.csv"
+    source_test_data_filename = path+"/source_test_data.csv"
+    target_test_data_filename = path+"/source_test_data.csv"
     
-    source_train_data = read(source_train_data_filename)
-    target_train_data = read(target_train_data_filename)
-    if exists(source_test_data_filename):
-        source_test_data = read(source_test_data_filename)
-        source_train_data, source_test_data= standard_scale(source_train_data, source_test_data)
-    else:   
-        source_train_data = standard_scale(source_train_data)
+    source_train_data = np.loadtxt(source_train_data_filename, delimiter=',')
+    target_train_data = np.loadtxt(target_train_data_filename, delimiter=',')
+    source_train_data[isnan(source_train_data)] = 0
+    target_train_data[isnan(target_train_data)] = 0
+    if os.path.isfile(source_test_data_filename):
+        source_test_data = np.loadtxt(source_test_data_filename, delimiter=',')
+        source_test_data[isnan(source_test_data)] = 0
+    else:    
         source_test_data = source_train_data
-    if exists(source_test_data_filename):    
-        target_test_data = read(target_test_data_filename)
-        target_train_data, target_test_data= standard_scale(source_train_data, source_test_data)
+    if os.path.isfile(target_test_data_filename):  
+        target_test_data = np.loadtxt(target_test_data_filename, delimiter=',')
+        target_test_data[isnan(target_test_data)] = 0
     else:
         target_test_data = target_train_data
-        target_train_data = source_train_data
     # do log transformation for cytof data    
     if data_type == 'cytof':
         source_train_data = preProcessCytofData(source_train_data)
@@ -29,7 +39,24 @@ def get_data(path, data_type):
         target_train_data = preProcessCytofData(target_train_data)
         target_test_data = preProcessCytofData(target_test_data)
         
+    if os.path.isfile(source_test_data_filename):
+        source_train_data, source_test_data= standard_scale(source_train_data, source_test_data)
+    else:   
+        source_train_data = standard_scale(source_train_data)  
+        
+    if os.path.isfile(target_test_data_filename):  
+        target_train_data, target_test_data= standard_scale(source_train_data, source_test_data)
+    else:
+        target_train_data = standard_scale(target_train_data)
+        
     return  source_train_data, target_train_data, source_test_data, target_test_data
+
+def make_dataset(data, batch_size = 100, buffer_size=4096, repeat=-1):
+    dataset = tf.data.Dataset.from_tensor_slices(data)
+    dataset = dataset.shuffle(buffer_size)
+    dataset = dataset.batch(batch_size)
+    dataset = dataset.repeat(repeat)
+    return dataset
 
 def get_models(model_name):
     return getattr(models, model_name)()

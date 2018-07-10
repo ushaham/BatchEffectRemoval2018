@@ -30,10 +30,10 @@ def _resnet_block_v2(input, block_dim, is_training):
     
 
 
-def cytof_basicl():
-    with tf.variable_scope('G', reuse=reuse):
+def cytof_basic():
+    with tf.variable_scope('G', reuse=tf.AUTO_REUSE):
         def Enc(input, n_blocks=3, block_dim=20, code_dim=5, reuse=True, is_training=True):
-            y = batch_norm(input, training)
+            y = batch_norm(input, is_training)
             y = lrelu(y)
             y = fc(y, block_dim)
             for _ in range(n_blocks):
@@ -43,7 +43,7 @@ def cytof_basicl():
             return c_mu, c_log_sigma_sq
         
         def Dec_a(code, output_dim, n_blocks=3, block_dim=20, reuse=True, is_training=True):
-            y = batch_norm(code, training)
+            y = batch_norm(code, is_training)
             y = lrelu(y)
             y = fc(y, block_dim)
             for _ in range(n_blocks):
@@ -53,7 +53,7 @@ def cytof_basicl():
                 return recon
         
         def Dec_b(code, output_dim, n_blocks=3, block_dim=20, reuse=True, is_training=True):
-            y = batch_norm(code, training)
+            y = batch_norm(code, is_training)
             y = lrelu(y)
             y = fc(y, block_dim)
             for _ in range(n_blocks):
@@ -63,7 +63,7 @@ def cytof_basicl():
                 return recon
             
     def Disc(input, n_blocks=3, block_dim=20, reuse=True, is_training=True):
-        y = batch_norm(code, training)
+        y = batch_norm(code, is_training)
         y = lrelu(y)
         y = fc(y, block_dim)
         for _ in range(n_blocks):

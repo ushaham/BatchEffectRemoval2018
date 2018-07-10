@@ -1,0 +1,13 @@
+{
+    "n_epochs":50,
+    "batch_size":64,
+    "lr":0.0002,
+    "code_dim":5,
+    "beta":0.1,
+    "gamma":1.0,
+    "delta":10.0,
+    "data_path":"./Data",
+    "data_type":"cytof",
+    "model_name":"cytof_basic",
+    "experiment_name":"04:35PM on July 10, 2018"
+}
