@@ -16,10 +16,11 @@ def get_data(path, data_type):
     source_train_data_filename = path+"/source_train_data.csv"
     target_train_data_filename = path+"/target_train_data.csv"
     source_test_data_filename = path+"/source_test_data.csv"
-    target_test_data_filename = path+"/source_test_data.csv"
+    target_test_data_filename = path+"/target_test_data.csv"
     
     source_train_data = np.loadtxt(source_train_data_filename, delimiter=',')
     target_train_data = np.loadtxt(target_train_data_filename, delimiter=',')
+    min_n = np.min([len(source_train_data), len(target_train_data)])
     source_train_data[isnan(source_train_data)] = 0
     target_train_data[isnan(target_train_data)] = 0
     if os.path.isfile(source_test_data_filename):
@@ -45,17 +46,18 @@ def get_data(path, data_type):
         source_train_data = standard_scale(source_train_data)  
         
     if os.path.isfile(target_test_data_filename):  
-        target_train_data, target_test_data= standard_scale(source_train_data, source_test_data)
+        target_train_data, target_test_data= standard_scale(target_train_data, target_test_data)
     else:
         target_train_data = standard_scale(target_train_data)
         
-    return  source_train_data, target_train_data, source_test_data, target_test_data
+    return  source_train_data, target_train_data, source_test_data, target_test_data, min_n
 
-def make_dataset(data, batch_size = 100, buffer_size=4096, repeat=-1):
+def make_dataset(data, batch_size = 100, buffer_size=4096):
     dataset = tf.data.Dataset.from_tensor_slices(data)
     dataset = dataset.shuffle(buffer_size)
-    dataset = dataset.batch(batch_size)
-    dataset = dataset.repeat(repeat)
+    #dataset = dataset.batch(batch_size)
+    dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(batch_size)) # instead of previous row
+    dataset = dataset.repeat()
     return dataset
 
 def get_models(model_name):
@@ -72,9 +74,35 @@ def gradient_penalty(real, fake, f):
         x = interpolate(real, fake)
         pred = f(x)
         gradients = tf.gradients(pred, x)[0]
-        slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=range(1, x.shape.ndims)))
+        slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=1))
         gp = tf.reduce_mean((slopes - 1.)**2)
         return gp
+    
+def tensors_filter(tensors, filters, combine_type='or'):
+    assert isinstance(tensors, (list, tuple)), '`tensors` shoule be a list or tuple!'
+    assert isinstance(filters, (str, list, tuple)), \
+        '`filters` should be a string or a list(tuple) of strings!'
+    assert combine_type == 'or' or combine_type == 'and', "`combine_type` should be 'or' or 'and'!"
+
+    if isinstance(filters, str):
+        filters = [filters]
+
+    f_tens = []
+    for ten in tensors:
+        if combine_type == 'or':
+            for filt in filters:
+                if filt in ten.name:
+                    f_tens.append(ten)
+                    break
+        elif combine_type == 'and':
+            all_pass = True
+            for filt in filters:
+                if filt not in ten.name:
+                    all_pass = False
+                    break
+            if all_pass:
+                f_tens.append(ten)
+    return f_tens    
 
 def trainable_variables(filters=None, combine_type='or'):
     t_var = tf.trainable_variables()

@@ -9,13 +9,17 @@ WGAN-gp code is based on on https://github.com/LynnHo/DCGAN-LSGAN-WGAN-WGAN-GP-T
 import argparse
 import datetime
 import json
+import traceback
 from functools import partial
 import os.path
+from sklearn import decomposition
 import tensorflow as tf
 
+import tflib as tl
 import models
 import utils
 import pylib
+import scatterHist as sh
 
 
 # ==============================================================================
@@ -58,12 +62,12 @@ with open('./output/%s/setting.txt' % experiment_name, 'w') as f:
 # =                            datasets and models                             =
 # ==============================================================================
 
-source_train_data, target_train_data, source_test_data, target_test_data = utils.get_data(data_path, data_type)
-source_train_dataset = utils.make_dataset(source_train_data)
-target_train_dataset = utils.make_dataset(target_train_data)
-s_iterator = source_train_dataset.make_initializable_iterator()
+source_train_data, target_train_data, source_test_data, target_test_data, min_n = utils.get_data(data_path, data_type)
+source_train_dataset = utils.make_dataset(source_train_data, batch_size = batch_size)
+target_train_dataset = utils.make_dataset(target_train_data, batch_size = batch_size)
+s_iterator = source_train_dataset.make_one_shot_iterator()
 s_next_element = s_iterator.get_next()
-t_iterator = target_train_dataset.make_initializable_iterator()
+t_iterator = target_train_dataset.make_one_shot_iterator()
 t_next_element = t_iterator.get_next()
 
 input_dim = source_train_data.shape[1]
@@ -84,7 +88,7 @@ def enc_dec(input, is_training=True):
     # sample a code
     epsilon = tf.random_normal(tf.shape(c_mu))
     if is_training:
-        c = c_mu + tf.sqrt(tf.exp(z_log_sigma_sq)) * epsilon
+        c = c_mu + tf.sqrt(tf.exp(c_log_sigma_sq)) * epsilon
     else:
         c = c_mu
 
@@ -102,6 +106,10 @@ input_b = tf.placeholder(tf.float32, [None, input_dim])
 c_mu_a, c_log_sigma_sq_a, c_a, rec_a, _ = enc_dec(input_a)
 c_mu_b, c_log_sigma_sq_b, c_b, _, rec_b = enc_dec(input_b)
 
+Disc_a = Disc(c_a)
+Disc_b = Disc(c_b)
+
+
 # G loss components
 rec_loss_a = tf.losses.mean_squared_error(input_a, rec_a)
 rec_loss_b = tf.losses.mean_squared_error(input_b, rec_b)
@@ -111,14 +119,12 @@ kld_loss_a = -tf.reduce_mean(0.5 * (1 + c_log_sigma_sq_a - c_mu_a**2 - tf.exp(c_
 kld_loss_b = -tf.reduce_mean(0.5 * (1 + c_log_sigma_sq_b - c_mu_b**2 - tf.exp(c_log_sigma_sq_a)))
 kld_loss = kld_loss_a + kld_loss_b
 
-adv_loss =  tf.losses.mean_squared_error(ca,cb)
+adv_loss =  tf.reduce_mean(Disc_a) - tf.reduce_mean(Disc_b)
 
 G_loss = rec_loss + kld_loss * beta + adv_loss * gamma
 
 # D loss components
-Disc_a = Disc(c_a)
-Disc_b = Disc(c_b)
-wd_loss = tf.reduce_mean(Disc_a) - tf.reduce_mean(Disc_b)
+wd_loss = tf.reduce_mean(Disc_b) - tf.reduce_mean(Disc_a)
 gp_loss = utils.gradient_penalty(c_a, c_b, Disc)
 
 
@@ -127,10 +133,11 @@ D_loss = wd_loss + gp_loss * delta
 
 # otpimizers
 d_vars = utils.trainable_variables('discriminator')
-g_vars = utils.trainable_variables('G')
+g_vars = utils.trainable_variables(['Encoder', 'Decoder_a', 'Decoder_b'])
 
-G_step = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.5).minimize(G_loss, var_list=g_var)
-D_step = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.5).minimize(D_loss, var_list=d_var)
+
+G_step = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.5).minimize(G_loss, var_list=g_vars)
+D_step = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.5).minimize(D_loss, var_list=d_vars)
 
 # summary
 G_summary = tl.summary({rec_loss_a: 'rec_loss_a',
@@ -150,6 +157,20 @@ D_summary = tl.summary({wd_loss: 'wd_loss',
 # =                                    train                                   =
 # ==============================================================================
 
+    # compute PCA
+pca = decomposition.PCA()
+pca.fit(target_train_data)
+pc1 = 0
+pc2 = 1
+axis1 = 'PC'+str(pc1)
+axis2 = 'PC'+str(pc2)
+
+# plot data in PC space before calibration
+target_sample_pca = pca.transform(target_test_data)
+projection_before = pca.transform(source_test_data)
+sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], projection_before[:,pc1], 
+            projection_before[:,pc2], axis1, axis2, title="before calibration")
+    
 # session
 sess = tl.session()
 
@@ -167,36 +188,41 @@ try:
 except:
     sess.run(tf.global_variables_initializer())
 
+
 # train
+iters_per_epoch = int(min_n/batch_size)
 try:
 
-    it = -1
     for ep in range(n_epochs):
-        dataset.reset()
-        it_per_epoch = it_in_epoch if it != -1 else -1
-        it_in_epoch = 0
-        for batch in dataset:
-            it += 1
-            it_in_epoch += 1
+        for it in range(iters_per_epoch):
+            t_batch = sess.run(t_next_element)
+            s_batch = sess.run(s_next_element)
 
-            # batch data
-            batch_a, batch_b = batch
 
             # train D
-            D_summary_opt, _ = sess.run([D_summary, D_step], feed_dict={input_a: batch_a, input_b:batch_b})
+            D_summary_opt, _ = sess.run([D_summary, D_step], feed_dict={input_a: t_batch, input_b:s_batch})
             summary_writer.add_summary(D_summary_opt, it)
             
             # train G
-            g_summary_opt, _ = sess.run([G_summary, G_step], feed_dict={input_a: batch_a, input_b:batch_b})
+            g_summary_opt, _ = sess.run([G_summary, G_step], feed_dict={input_a: t_batch, input_b:s_batch})
             summary_writer.add_summary(g_summary_opt, it)
 
             # display
             if (it + 1) % 1 == 0:
-                print("Epoch: (%3d) (%5d/%5d)" % (ep, it_in_epoch, it_per_epoch))
-                # plot val datawith scatter Hist
-            
-            if (it + 1) % 1000 == 0:
-                save_dir = './output/%s/sample_training' % experiment_name
+                print("Epoch: (%3d) (%5d/%5d)" % (ep+1, it+1, iters_per_epoch))
+                # feed source and target train data through Enc, Dec
+                # do PCA 
+                # plot scatterhist
+        t_rec = sess.run(rec_a, feed_dict={input_a: source_train_data})
+        s_rec = sess.run(rec_a, feed_dict={input_a: target_train_data})
+        
+        target_sample_pca = pca.transform(t_rec)
+        source_sample_pca = pca.transform(s_rec)
+        sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], projection_before[:,pc1], projection_before[:,pc2], axis1, axis2, 
+               title="during calibration")
+
+        
+        save_dir = './output/%s/sample_training' % experiment_name
         save_path = saver.save(sess, '%s/Epoch_%d.ckpt' % (ckpt_dir, ep))
         print('Model is saved in file: %s' % save_path)
 except:
@@ -209,24 +235,17 @@ finally:
 # ==============================================================================
 # =                 visualize calibration on test data                         =
 # ==============================================================================
-pca = decomposition.PCA()
-pca.fit(target)
+sess = tl.session()
 
-# project data onto PCs
-target_sample_pca = pca.transform(target)
-projection_before = pca.transform(source)
-projection_after = pca.transform(calibratedSource)
+t_rec = sess.run(rec_a, feed_dict={input_a: source_train_dataset})
+s_rec = sess.run(rec_a, feed_dict={input_a: target_train_dataset})
 
-# choose PCs to plot
-pc1 = 0
-pc2 = 1
-axis1 = 'PC'+str(pc1)
-axis2 = 'PC'+str(pc2)
-sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], projection_before[:,pc1], projection_before[:,pc2], axis1, axis2)
-sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], projection_after[:,pc1], projection_after[:,pc2], axis1, axis2)
+target_sample_pca = pca.transform(t_rec)
+source_sample_pca = pca.transform(s_rec)
+sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], projection_before[:,pc1], projection_before[:,pc2], axis1, axis2, 
+       title="after calibration")
 
-
-
+sess.close()
 # ==============================================================================
 # =                                  save data                                 =
 # ==============================================================================
