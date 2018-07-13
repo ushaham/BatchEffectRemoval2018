@@ -131,7 +131,7 @@ kld_loss_a = -tf.reduce_mean(0.5 * (1 + c_log_sigma_sq_a - c_mu_a**2 - tf.exp(c_
 kld_loss_b = -tf.reduce_mean(0.5 * (1 + c_log_sigma_sq_b - c_mu_b**2 - tf.exp(c_log_sigma_sq_a)))
 kld_loss = kld_loss_a + kld_loss_b
 
-adv_loss =  tf.reduce_mean(Disc_a) - tf.reduce_mean(Disc_b)
+adv_loss =  tf.losses.mean_squared_error(tf.reduce_mean(Disc_a), tf.reduce_mean(Disc_b))
 
 G_loss = rec_loss + kld_loss * beta + adv_loss * gamma
 
