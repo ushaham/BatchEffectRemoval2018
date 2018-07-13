@@ -6,9 +6,11 @@ The script is based on https://github.com/LynnHo/VAE-Tensorflow
 WGAN-gp code is based on on https://github.com/LynnHo/DCGAN-LSGAN-WGAN-WGAN-GP-Tensorflow/blob/master/models_mnist.py
 
 '''
+import numpy as np
 import argparse
 import datetime
 import json
+import shutil
 import traceback
 from functools import partial
 import os.path
@@ -16,7 +18,6 @@ from sklearn import decomposition
 import tensorflow as tf
 
 import tflib as tl
-import models
 import utils
 import pylib
 import scatterHist as sh
@@ -26,19 +27,25 @@ import scatterHist as sh
 # =                                inputs arguments                            =
 # ==============================================================================
 
+# TODO: delete for public version
+if os.path.exists('./output'):
+    shutil.rmtree('./output')
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--n_epochs', dest='n_epochs', type=int, default=50, help="number of training epochs")
 parser.add_argument('--batch_size', dest='batch_size', type=int, default=64, help="minibatch size")
-parser.add_argument('--lr', dest='lr', type=float, default=0.0002, help='initial learning rate')
-parser.add_argument('--code_dim', dest='code_dim', type=int, default=5, help='dimension of code space')
-parser.add_argument('--beta', dest='beta', type=float, default=.1, help="KL coefficient")
-parser.add_argument('--gamma', dest='gamma', type=float, default=1., help="adversarial loss coefficient")
-parser.add_argument('--delta', dest='delta', type=float, default=10., help="gp loss coefficient")
+parser.add_argument('--lr', dest='lr', type=float, default=1e-3, help='initial learning rate')
+parser.add_argument('--code_dim', dest='code_dim', type=int, default=15, help='dimension of code space')
+parser.add_argument('--beta', dest='beta', type=float, default=.0, help="KL coefficient")
+parser.add_argument('--gamma', dest='gamma', type=float, default=0., help="adversarial loss coefficient")
+parser.add_argument('--delta', dest='delta', type=float, default=0., help="gp loss coefficient")
 parser.add_argument('--data_path', dest='data_path', default='./Data', help="path to data folder")
 parser.add_argument('--data_type', dest='data_type', default='cytof', help="type of data")
-
+parser.add_argument('--recover_org_scale', dest='recover_org_scale', default=False, \
+                    help="wether to save the calibrated data in the original scale")
 parser.add_argument('--model', dest='model_name', default='cytof_basic')
-parser.add_argument('--experiment_name', dest='experiment_name', default=datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y"))
+parser.add_argument('--experiment_name', dest='experiment_name', 
+                    default=datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y"))
 
 args = parser.parse_args()
 
@@ -53,6 +60,7 @@ data_path = args.data_path
 data_type = args.data_type
 model_name = args.model_name
 experiment_name = args.experiment_name
+recover_org_scale = args.recover_org_scale
 
 pylib.mkdir('./output/%s' % experiment_name)
 with open('./output/%s/setting.txt' % experiment_name, 'w') as f:
@@ -62,7 +70,8 @@ with open('./output/%s/setting.txt' % experiment_name, 'w') as f:
 # =                            datasets and models                             =
 # ==============================================================================
 
-source_train_data, target_train_data, source_test_data, target_test_data, min_n = utils.get_data(data_path, data_type)
+source_train_data, target_train_data, source_test_data, target_test_data, \
+    min_n, preprocessor = utils.get_data(data_path, data_type)
 source_train_dataset = utils.make_dataset(source_train_data, batch_size = batch_size)
 target_train_dataset = utils.make_dataset(target_train_data, batch_size = batch_size)
 s_iterator = source_train_dataset.make_one_shot_iterator()
@@ -105,6 +114,9 @@ input_b = tf.placeholder(tf.float32, [None, input_dim])
 # encode & decode
 c_mu_a, c_log_sigma_sq_a, c_a, rec_a, _ = enc_dec(input_a)
 c_mu_b, c_log_sigma_sq_b, c_b, _, rec_b = enc_dec(input_b)
+
+_, _, _, rec_a1, _ = enc_dec(input_a, is_training=False)
+_, _, _, _, rec_b1 = enc_dec(input_b, is_training=False)
 
 Disc_a = Disc(c_a)
 Disc_b = Disc(c_b)
@@ -157,7 +169,7 @@ D_summary = tl.summary({wd_loss: 'wd_loss',
 # =                                    train                                   =
 # ==============================================================================
 
-    # compute PCA
+# compute PCA
 pca = decomposition.PCA()
 pca.fit(target_train_data)
 pc1 = 0
@@ -169,7 +181,8 @@ axis2 = 'PC'+str(pc2)
 target_sample_pca = pca.transform(target_test_data)
 projection_before = pca.transform(source_test_data)
 sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], projection_before[:,pc1], 
-            projection_before[:,pc2], axis1, axis2, title="before calibration")
+            projection_before[:,pc2], axis1, axis2, title="before calibration",
+            name1='target', name2='source')
     
 # session
 sess = tl.session()
@@ -191,35 +204,41 @@ except:
 
 # train
 iters_per_epoch = int(min_n/batch_size)
+overall_it = 0
 try:
 
     for ep in range(n_epochs):
         for it in range(iters_per_epoch):
+            overall_it += 1
             t_batch = sess.run(t_next_element)
             s_batch = sess.run(s_next_element)
 
 
             # train D
-            D_summary_opt, _ = sess.run([D_summary, D_step], feed_dict={input_a: t_batch, input_b:s_batch})
-            summary_writer.add_summary(D_summary_opt, it)
+            D_summary_opt, _ = sess.run([D_summary, D_step], 
+                                        feed_dict={input_a: t_batch, input_b:s_batch})
+            summary_writer.add_summary(D_summary_opt, overall_it)
             
             # train G
-            g_summary_opt, _ = sess.run([G_summary, G_step], feed_dict={input_a: t_batch, input_b:s_batch})
-            summary_writer.add_summary(g_summary_opt, it)
+            g_summary_opt, _ = sess.run([G_summary, G_step], 
+                                        feed_dict={input_a: t_batch, input_b:s_batch})
+            summary_writer.add_summary(g_summary_opt, overall_it)
 
             # display
             if (it + 1) % 1 == 0:
                 print("Epoch: (%3d) (%5d/%5d)" % (ep+1, it+1, iters_per_epoch))
-                # feed source and target train data through Enc, Dec
-                # do PCA 
-                # plot scatterhist
-        t_rec = sess.run(rec_a, feed_dict={input_a: source_train_data})
-        s_rec = sess.run(rec_a, feed_dict={input_a: target_train_data})
+                
+        # TODO: uncomment next line and delete the one afterwards        
+        #s_rec = sess.run(rec_a1, feed_dict={input_a: source_train_data})
+        s_rec = target_train_data
+        t_rec = sess.run(rec_a1, feed_dict={input_a: target_train_data})
         
         target_sample_pca = pca.transform(t_rec)
         source_sample_pca = pca.transform(s_rec)
-        sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], projection_before[:,pc1], projection_before[:,pc2], axis1, axis2, 
-               title="during calibration")
+        sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], 
+                       source_sample_pca[:,pc1], source_sample_pca[:,pc2], 
+                       axis1, axis2, title="during calibration", 
+                       name1='target', name2='source')
 
         
         save_dir = './output/%s/sample_training' % experiment_name
@@ -235,17 +254,48 @@ finally:
 # ==============================================================================
 # =                 visualize calibration on test data                         =
 # ==============================================================================
+
 sess = tl.session()
 
-t_rec = sess.run(rec_a, feed_dict={input_a: source_train_dataset})
-s_rec = sess.run(rec_a, feed_dict={input_a: target_train_dataset})
+try:
+    tl.load_checkpoint(ckpt_dir, sess)
+except:
+    sess.run(tf.global_variables_initializer())
+
+t_rec = sess.run(rec_a1, feed_dict={input_a: source_test_data})
+s_rec = sess.run(rec_a1, feed_dict={input_a: target_test_data})
+
+sess.close()
+
+
+if recover_org_scale:
+    target_test_data = utils.recover_org_scale(target_test_data, data_type, preprocessor)
+    source_test_data = utils.recover_org_scale(source_test_data, data_type, preprocessor)
+    t_rec = utils.recover_org_scale(t_rec, data_type, preprocessor)
+    s_rec = utils.recover_org_scale(s_rec, data_type, preprocessor)
+
+target_sample_pca = pca.transform(target_test_data)
+projection_before = pca.transform(source_test_data)
+sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], projection_before[:,pc1], 
+            projection_before[:,pc2], axis1, axis2, title="test data before calibration",
+            name1='target', name2='source')
+
 
 target_sample_pca = pca.transform(t_rec)
 source_sample_pca = pca.transform(s_rec)
-sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], projection_before[:,pc1], projection_before[:,pc2], axis1, axis2, 
-       title="after calibration")
+sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], 
+               source_sample_pca[:,pc1], source_sample_pca[:,pc2], axis1, axis2, 
+               title="test data after calibration", name1='target', name2='source')
 
-sess.close()
+
+
 # ==============================================================================
 # =                                  save data                                 =
 # ==============================================================================
+
+save_dir = './output/%s/calibrated_data' % experiment_name
+pylib.mkdir(save_dir)
+np.savetxt(fname=save_dir+'/calibrated_source_test_data.csv', X=s_rec, delimiter=',')
+np.savetxt(fname=save_dir+'/calibrated_target_test_data.csv', X=t_rec, delimiter=',')
+
+print ('finished')

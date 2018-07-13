@@ -40,17 +40,17 @@ def get_data(path, data_type):
         target_train_data = preProcessCytofData(target_train_data)
         target_test_data = preProcessCytofData(target_test_data)
         
-    if os.path.isfile(source_test_data_filename):
-        source_train_data, source_test_data= standard_scale(source_train_data, source_test_data)
-    else:   
-        source_train_data = standard_scale(source_train_data)  
+        source_train_data, source_test_data, _ = standard_scale(source_train_data, source_test_data)
+        target_train_data, target_test_data, preprocessor = standard_scale(target_train_data, target_test_data)
         
-    if os.path.isfile(target_test_data_filename):  
-        target_train_data, target_test_data= standard_scale(target_train_data, target_test_data)
-    else:
-        target_train_data = standard_scale(target_train_data)
-        
-    return  source_train_data, target_train_data, source_test_data, target_test_data, min_n
+    return  source_train_data, target_train_data, source_test_data, target_test_data, min_n, preprocessor
+
+def recover_org_scale(X, data_type, preprocessor):
+    X = preprocessor.inverse_transform(X)
+    # invert log transformation for cytof data    
+    if data_type == 'cytof':
+        X = np.exp(X) - 1
+    return X    
 
 def make_dataset(data, batch_size = 100, buffer_size=4096):
     dataset = tf.data.Dataset.from_tensor_slices(data)
@@ -116,7 +116,7 @@ def standard_scale(X_train, X_test):
     X_train = preprocessor.transform(X_train)
     if X_test is not None:
         X_test = preprocessor.transform(X_test)
-    return X_train, X_test    
+    return X_train, X_test, preprocessor    
 
 def preProcessCytofData(data):
     return np.log(1+data)

@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import NullFormatter
 
-def scatterHist(x1,x2, y1,y2, axis1='', axis2='', title=''):
+def scatterHist(x1,x2, y1,y2, axis1='', axis2='', title='', name1='', name2=''):
     nullfmt = NullFormatter()         # no labels
     
     # definitions for the axes
@@ -60,5 +60,6 @@ def scatterHist(x1,x2, y1,y2, axis1='', axis2='', title=''):
     axScatter.set_xlabel(axis1, fontsize=15)
     axScatter.set_ylabel(axis2, fontsize=15)
     
-    plt.title(title)
+    axHistx.set_title(title)
+    axScatter.legend([name1, name2])
     plt.show()
