@@ -36,9 +36,9 @@ parser.add_argument('--n_epochs', dest='n_epochs', type=int, default=50, help="n
 parser.add_argument('--batch_size', dest='batch_size', type=int, default=64, help="minibatch size")
 parser.add_argument('--lr', dest='lr', type=float, default=1e-3, help='initial learning rate')
 parser.add_argument('--code_dim', dest='code_dim', type=int, default=15, help='dimension of code space')
-parser.add_argument('--beta', dest='beta', type=float, default=.0, help="KL coefficient")
-parser.add_argument('--gamma', dest='gamma', type=float, default=0., help="adversarial loss coefficient")
-parser.add_argument('--delta', dest='delta', type=float, default=0., help="gp loss coefficient")
+parser.add_argument('--beta', dest='beta', type=float, default=1., help="KL coefficient")
+parser.add_argument('--gamma', dest='gamma', type=float, default=1., help="adversarial loss coefficient")
+parser.add_argument('--delta', dest='delta', type=float, default=1., help="gp loss coefficient")
 parser.add_argument('--data_path', dest='data_path', default='./Data', help="path to data folder")
 parser.add_argument('--data_type', dest='data_type', default='cytof', help="type of data")
 parser.add_argument('--recover_org_scale', dest='recover_org_scale', default=False, \
@@ -169,6 +169,10 @@ D_summary = tl.summary({wd_loss: 'wd_loss',
 # =                                    train                                   =
 # ==============================================================================
 
+# number of points to plot during training    
+n_s = np.min([len(source_train_data),10000]) 
+n_t = np.min([len(target_train_data),10000])    
+
 # compute PCA
 pca = decomposition.PCA()
 pca.fit(target_train_data)
@@ -228,10 +232,8 @@ try:
             if (it + 1) % 1 == 0:
                 print("Epoch: (%3d) (%5d/%5d)" % (ep+1, it+1, iters_per_epoch))
                 
-        # TODO: uncomment next line and delete the one afterwards        
-        #s_rec = sess.run(rec_a1, feed_dict={input_a: source_train_data})
-        s_rec = target_train_data
-        t_rec = sess.run(rec_a1, feed_dict={input_a: target_train_data})
+        s_rec = sess.run(rec_a1, feed_dict={input_a: source_train_data[:n_s]})
+        t_rec = sess.run(rec_a1, feed_dict={input_a: target_train_data[:n_t]})
         
         target_sample_pca = pca.transform(t_rec)
         source_sample_pca = pca.transform(s_rec)

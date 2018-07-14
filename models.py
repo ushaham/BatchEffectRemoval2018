@@ -49,9 +49,8 @@ def cytof_basic():
             y = fc(y, block_dim)
             for _ in range(n_blocks):
                 y = _resnet_block_v2(y, block_dim, is_training)
-                recon = fc(y, output_dim)
-                recon = relu(recon)
-                return recon
+            recon = fc(y, output_dim)
+            return recon
     
     def Dec_b(code, output_dim, n_blocks=3, block_dim=20, reuse=True, is_training=True):
         with tf.variable_scope('Decoder_b', reuse=tf.AUTO_REUSE):
@@ -60,9 +59,8 @@ def cytof_basic():
             y = fc(y, block_dim)
             for _ in range(n_blocks):
                 y = _resnet_block_v2(y, block_dim, is_training)
-                recon = fc(y, output_dim)
-                recon = relu(recon)
-                return recon
+            recon = fc(y, output_dim)
+            return recon
             
     def Disc(code, n_blocks=3, block_dim=20, reuse=True, is_training=True):
         with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
