@@ -32,12 +32,12 @@ if os.path.exists('./output'):
     shutil.rmtree('./output')
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--n_epochs', dest='n_epochs', type=int, default=50, help="number of training epochs")
+parser.add_argument('--n_epochs', dest='n_epochs', type=int, default=100, help="number of training epochs")
 parser.add_argument('--batch_size', dest='batch_size', type=int, default=64, help="minibatch size")
 parser.add_argument('--lr', dest='lr', type=float, default=1e-3, help='initial learning rate')
 parser.add_argument('--code_dim', dest='code_dim', type=int, default=15, help='dimension of code space')
-parser.add_argument('--beta', dest='beta', type=float, default=1., help="KL coefficient")
-parser.add_argument('--gamma', dest='gamma', type=float, default=1., help="adversarial loss coefficient")
+parser.add_argument('--beta', dest='beta', type=float, default=.1, help="KL coefficient")
+parser.add_argument('--gamma', dest='gamma', type=float, default=10., help="adversarial loss coefficient")
 parser.add_argument('--delta', dest='delta', type=float, default=1., help="gp loss coefficient")
 parser.add_argument('--data_path', dest='data_path', default='./Data', help="path to data folder")
 parser.add_argument('--data_type', dest='data_type', default='cytof', help="type of data")
@@ -182,10 +182,10 @@ axis1 = 'PC'+str(pc1)
 axis2 = 'PC'+str(pc2)
 
 # plot data in PC space before calibration
-target_sample_pca = pca.transform(target_test_data)
-projection_before = pca.transform(source_test_data)
-sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], projection_before[:,pc1], 
-            projection_before[:,pc2], axis1, axis2, title="before calibration",
+target_pca = pca.transform(target_test_data)
+source_pca = pca.transform(source_test_data)
+sh.scatterHist(target_pca[:,pc1], target_pca[:,pc2], source_pca[:,pc1], 
+            source_pca[:,pc2], axis1, axis2, title="before calibration",
             name1='target', name2='source')
     
 # session
@@ -232,14 +232,14 @@ try:
             if (it + 1) % 1 == 0:
                 print("Epoch: (%3d) (%5d/%5d)" % (ep+1, it+1, iters_per_epoch))
                 
-        s_rec = sess.run(rec_a1, feed_dict={input_a: source_train_data[:n_s]})
-        t_rec = sess.run(rec_a1, feed_dict={input_a: target_train_data[:n_t]})
+        s_cal = sess.run(rec_a1, feed_dict={input_a: source_train_data[:n_s]})
+        t_cal = sess.run(rec_a1, feed_dict={input_a: target_train_data[:n_t]})
         
-        target_sample_pca = pca.transform(t_rec)
-        source_sample_pca = pca.transform(s_rec)
-        sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], 
-                       source_sample_pca[:,pc1], source_sample_pca[:,pc2], 
-                       axis1, axis2, title="during calibration", 
+        target_pca = pca.transform(t_cal)
+        source_pca = pca.transform(s_cal)
+        sh.scatterHist(target_pca[:,pc1], target_pca[:,pc2], 
+                       source_pca[:,pc1], source_pca[:,pc2], 
+                       axis1, axis2, title="during training, epoch: %3d" % (ep+1), 
                        name1='target', name2='source')
 
         
@@ -264,8 +264,10 @@ try:
 except:
     sess.run(tf.global_variables_initializer())
 
-t_rec = sess.run(rec_a1, feed_dict={input_a: source_test_data})
-s_rec = sess.run(rec_a1, feed_dict={input_a: target_test_data})
+t_rec = sess.run(rec_a1, feed_dict={input_a: target_test_data})
+s_cal = sess.run(rec_a1, feed_dict={input_a: source_test_data})
+s_rec = sess.run(rec_b1, feed_dict={input_b: source_test_data})
+
 
 sess.close()
 
@@ -275,18 +277,19 @@ if recover_org_scale:
     source_test_data = utils.recover_org_scale(source_test_data, data_type, preprocessor)
     t_rec = utils.recover_org_scale(t_rec, data_type, preprocessor)
     s_rec = utils.recover_org_scale(s_rec, data_type, preprocessor)
+    s_cal = utils.recover_org_scale(s_cal, data_type, preprocessor)
 
-target_sample_pca = pca.transform(target_test_data)
-projection_before = pca.transform(source_test_data)
-sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], projection_before[:,pc1], 
-            projection_before[:,pc2], axis1, axis2, title="test data before calibration",
+target_pca = pca.transform(target_test_data)
+source_pca = pca.transform(source_test_data)
+sh.scatterHist(target_pca[:,pc1], target_pca[:,pc2], source_pca[:,pc1], 
+            source_pca[:,pc2], axis1, axis2, title="test data before calibration",
             name1='target', name2='source')
 
 
-target_sample_pca = pca.transform(t_rec)
-source_sample_pca = pca.transform(s_rec)
-sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2], 
-               source_sample_pca[:,pc1], source_sample_pca[:,pc2], axis1, axis2, 
+target_rec_pca = pca.transform(t_rec)
+source_cal_pca = pca.transform(s_cal)
+sh.scatterHist(target_rec_pca[:,pc1], target_rec_pca[:,pc2], 
+               source_cal_pca[:,pc1], source_cal_pca[:,pc2], axis1, axis2, 
                title="test data after calibration", name1='target', name2='source')
 
 
@@ -297,7 +300,10 @@ sh.scatterHist(target_sample_pca[:,pc1], target_sample_pca[:,pc2],
 
 save_dir = './output/%s/calibrated_data' % experiment_name
 pylib.mkdir(save_dir)
-np.savetxt(fname=save_dir+'/calibrated_source_test_data.csv', X=s_rec, delimiter=',')
-np.savetxt(fname=save_dir+'/calibrated_target_test_data.csv', X=t_rec, delimiter=',')
+np.savetxt(fname=save_dir+'/calibrated_source_test_data.csv', X=s_cal, delimiter=',')
+np.savetxt(fname=save_dir+'/reconstructed_source_test_data.csv', X=s_rec, delimiter=',')
+np.savetxt(fname=save_dir+'/reconstructed_target_test_data.csv', X=t_rec, delimiter=',')
+np.savetxt(fname=save_dir+'/source_test_data.csv', X=source_test_data, delimiter=',')
+np.savetxt(fname=save_dir+'/target_test_data.csv', X=target_test_data, delimiter=',')
 
 print ('finished')
