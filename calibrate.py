@@ -182,13 +182,6 @@ pc1 = 0
 pc2 = 1
 axis1 = 'PC'+str(pc1)
 axis2 = 'PC'+str(pc2)
-
-# plot data in PC space before calibration
-target_pca = pca.transform(target_test_data)
-source_pca = pca.transform(source_test_data)
-sh.scatterHist(target_pca[:,pc1], target_pca[:,pc2], source_pca[:,pc1], 
-            source_pca[:,pc2], axis1, axis2, title="before calibration",
-            name1='target', name2='source')
     
 # session
 sess = tl.session()
@@ -235,9 +228,9 @@ try:
                 print("Epoch: (%3d) (%5d/%5d)" % (ep+1, it+1, iters_per_epoch))
                 
         s_cal = sess.run(rec_a1, feed_dict={input_a: source_train_data[:n_s]})
-        t_cal = sess.run(rec_a1, feed_dict={input_a: target_train_data[:n_t]})
+        t_rec = sess.run(rec_a1, feed_dict={input_a: target_train_data[:n_t]})
         
-        target_pca = pca.transform(t_cal)
+        target_pca = pca.transform(t_rec)
         source_pca = pca.transform(s_cal)
         sh.scatterHist(target_pca[:,pc1], target_pca[:,pc2], 
                        source_pca[:,pc1], source_pca[:,pc2], 
@@ -264,43 +257,43 @@ try:
 except:
     sess.run(tf.global_variables_initializer())
 
-t_rec, t_c = sess.run([rec_a1, c_a1], feed_dict={input_a: target_test_data})
-s_cal = sess.run(rec_a1, feed_dict={input_a: source_test_data})
-s_rec, s_c = sess.run([rec_b1, c_b1], feed_dict={input_b: source_test_data})
+t_rec_train, t_c_train = sess.run([rec_a1, c_a1], feed_dict={input_a: target_train_data})
+s_cal_train = sess.run(rec_a1, feed_dict={input_a: source_train_data})
+s_rec_train, s_c_train = sess.run([rec_b1, c_b1], feed_dict={input_b: source_train_data})  
 if use_test:
-    t_rec_train, t_c_train = sess.run([rec_a1, c_a1], feed_dict={input_a: target_train_data})
-    s_cal_train = sess.run(rec_a1, feed_dict={input_a: source_train_data})
-    s_rec_train, s_c_train = sess.run([rec_b1, c_b1], feed_dict={input_b: source_train_data})  
+    t_rec_test, t_c_test = sess.run([rec_a1, c_a1], feed_dict={input_a: target_test_data})
+    s_cal_test = sess.run(rec_a1, feed_dict={input_a: source_test_data})
+    s_rec_test, s_c_test = sess.run([rec_b1, c_b1], feed_dict={input_b: source_test_data})  
 
 
 sess.close()
 
 
 if recover_org_scale:
-    target_test_data = utils.recover_org_scale(target_test_data, data_type, preprocessor)
-    source_test_data = utils.recover_org_scale(source_test_data, data_type, preprocessor)
-    t_rec = utils.recover_org_scale(t_rec, data_type, preprocessor)
-    s_rec = utils.recover_org_scale(s_rec, data_type, preprocessor)
-    s_cal = utils.recover_org_scale(s_cal, data_type, preprocessor)
+    target_train_data = utils.recover_org_scale(target_train_data, data_type, preprocessor)
+    source_train_data = utils.recover_org_scale(source_train_data, data_type, preprocessor)
+    t_rec_train = utils.recover_org_scale(t_rec_train, data_type, preprocessor)
+    s_rec_train = utils.recover_org_scale(s_rec_train, data_type, preprocessor)
+    s_cal_train = utils.recover_org_scale(s_cal_train, data_type, preprocessor)
     if use_test:
-        target_train_data = utils.recover_org_scale(target_train_data, data_type, preprocessor)
-        source_train_data = utils.recover_org_scale(source_train_data, data_type, preprocessor)
-        t_rec_train = utils.recover_org_scale(t_rec_train, data_type, preprocessor)
-        s_rec_train = utils.recover_org_scale(s_rec_train, data_type, preprocessor)
-        s_cal_train = utils.recover_org_scale(s_cal_train, data_type, preprocessor)
+        target_test_data = utils.recover_org_scale(target_test_data, data_type, preprocessor)
+        source_test_data = utils.recover_org_scale(source_test_data, data_type, preprocessor)
+        t_rec_test = utils.recover_org_scale(t_rec_test, data_type, preprocessor)
+        s_rec_test = utils.recover_org_scale(s_rec_test, data_type, preprocessor)
+        s_cal_test = utils.recover_org_scale(s_cal_test, data_type, preprocessor)
 
-target_pca = pca.transform(target_test_data)
-source_pca = pca.transform(source_test_data)
+target_pca = pca.transform(target_train_data)
+source_pca = pca.transform(source_train_data)
 sh.scatterHist(target_pca[:,pc1], target_pca[:,pc2], source_pca[:,pc1], 
-            source_pca[:,pc2], axis1, axis2, title="test data before calibration",
+            source_pca[:,pc2], axis1, axis2, title="train data before calibration",
             name1='target', name2='source')
 
 
-target_rec_pca = pca.transform(t_rec)
-source_cal_pca = pca.transform(s_cal)
+target_rec_pca = pca.transform(t_rec_train)
+source_cal_pca = pca.transform(s_cal_train)
 sh.scatterHist(target_rec_pca[:,pc1], target_rec_pca[:,pc2], 
                source_cal_pca[:,pc1], source_cal_pca[:,pc2], axis1, axis2, 
-               title="test data after calibration", name1='target', name2='source')
+               title="train data after calibration", name1='target', name2='source')
 
 # ==============================================================================
 # =                                  save data                                 =
@@ -308,20 +301,20 @@ sh.scatterHist(target_rec_pca[:,pc1], target_rec_pca[:,pc2],
 
 save_dir = './output/%s/calibrated_data' % experiment_name
 pylib.mkdir(save_dir)
-np.savetxt(fname=save_dir+'/calibrated_source_test_data.csv', X=s_cal, delimiter=',')
-np.savetxt(fname=save_dir+'/reconstructed_source_test_data.csv', X=s_rec, delimiter=',')
-np.savetxt(fname=save_dir+'/reconstructed_target_test_data.csv', X=t_rec, delimiter=',')
-np.savetxt(fname=save_dir+'/source_test_data.csv', X=source_test_data, delimiter=',')
-np.savetxt(fname=save_dir+'/target_test_data.csv', X=target_test_data, delimiter=',')
-np.savetxt(fname=save_dir+'/source_test_code.csv', X=s_c, delimiter=',')
-np.savetxt(fname=save_dir+'/target_test_code.csv', X=t_c, delimiter=',')
+np.savetxt(fname=save_dir+'/calibrated_source_train_data.csv', X=s_cal_train, delimiter=',')
+np.savetxt(fname=save_dir+'/reconstructed_source_train_data.csv', X=s_rec_train, delimiter=',')
+np.savetxt(fname=save_dir+'/reconstructed_target_train_data.csv', X=t_rec_train, delimiter=',')
+np.savetxt(fname=save_dir+'/source_train_data.csv', X=source_train_data, delimiter=',')
+np.savetxt(fname=save_dir+'/target_train_data.csv', X=target_train_data, delimiter=',')
+np.savetxt(fname=save_dir+'/source_train_code.csv', X=s_c_train, delimiter=',')
+np.savetxt(fname=save_dir+'/target_train_code.csv', X=t_c_train, delimiter=',')
 if use_test:
-    np.savetxt(fname=save_dir+'/calibrated_source_train_data.csv', X=s_cal_train, delimiter=',')
-    np.savetxt(fname=save_dir+'/reconstructed_source_train_data.csv', X=s_rec_train, delimiter=',')
-    np.savetxt(fname=save_dir+'/reconstructed_target_train_data.csv', X=t_rec_train, delimiter=',')
-    np.savetxt(fname=save_dir+'/source_train_data.csv', X=source_train_data, delimiter=',')
-    np.savetxt(fname=save_dir+'/target_train_data.csv', X=target_train_data, delimiter=',')
-    np.savetxt(fname=save_dir+'/source_train_code.csv', X=s_c_train, delimiter=',')
-    np.savetxt(fname=save_dir+'/target_train_code.csv', X=t_c_train, delimiter=',')
+    np.savetxt(fname=save_dir+'/calibrated_source_test_data.csv', X=s_cal_test, delimiter=',')
+    np.savetxt(fname=save_dir+'/reconstructed_source_test_data.csv', X=s_rec_test, delimiter=',')
+    np.savetxt(fname=save_dir+'/reconstructed_target_test_data.csv', X=t_rec_test, delimiter=',')
+    np.savetxt(fname=save_dir+'/source_test_data.csv', X=source_test_data, delimiter=',')
+    np.savetxt(fname=save_dir+'/target_test_data.csv', X=target_test_data, delimiter=',')
+    np.savetxt(fname=save_dir+'/source_test_code.csv', X=s_c_test, delimiter=',')
+    np.savetxt(fname=save_dir+'/target_test_code.csv', X=t_c_test, delimiter=',')
 
 print ('finished')

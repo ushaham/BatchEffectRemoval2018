@@ -6,10 +6,13 @@ Created on Tue Jul 10 15:02:29 2018
 
 import numpy as np
 import os.path
-import sklearn.preprocessing as prep
 import tensorflow as tf
-import models
 from numpy import *
+import sklearn.preprocessing as prep
+from sklearn.neighbors import NearestNeighbors
+import models
+import keras.backend as K
+
 
 
 def get_data(path, data_type, use_test):
@@ -124,6 +127,13 @@ def standard_scale(X_train, X_test):
 
 def preProcessCytofData(data):
     return np.log(1+data)
+
+def squaredDistance(X,Y):
+    # X is nxd, Y is mxd, returns nxm matrix of all pairwise Euclidean distances
+    # broadcasted subtraction, a square, and a sum.
+    r = K.expand_dims(X, axis=1)
+    return K.sum(K.square(r-Y), axis=-1)
+
  
  
 class MMD:
@@ -162,16 +172,22 @@ class MMD:
             weights = K.eval(K.shape(scales)[0])
         weights = K.variable(value=np.asarray(weights))
         self.MMDLayer =  MMDLayer
-        MMDTargetTrain, MMDTargetValidation = train_test_split(MMDTargetTrain, test_size=MMDTargetValidation_split, random_state=42)
         self.MMDTargetTrain = K.variable(value=MMDTargetTrain)
         self.MMDTargetTrainSize = K.eval(K.shape(self.MMDTargetTrain)[0])
-        self.MMDTargetValidation = K.variable(value=MMDTargetValidation)
-        self.MMDTargetValidationSize = K.eval(K.shape(self.MMDTargetValidation)[0])
         self.MMDTargetSampleSize = MMDTargetSampleSize
         self.kernel = self.RaphyKernel
         self.scales = scales
         self.weights = weights
 
+    def RaphyKernel(self,X,Y):
+            #expand dist to a 1xnxm tensor where the 1 is broadcastable
+            sQdist = K.expand_dims(squaredDistance(X,Y),0) 
+            #expand scales into a px1x1 tensor so we can do an element wise exponential
+            self.scales = K.expand_dims(K.expand_dims(self.scales,-1),-1)
+            #expand scales into a px1x1 tensor so we can do an element wise exponential
+            self.weights = K.expand_dims(K.expand_dims(self.weights,-1),-1)
+            #calculated the kernal for each scale weight on the distance matrix and sum them up
+            return K.sum(self.weights*K.exp(-sQdist / (K.pow(self.scales,2))),0)
     
     #Calculate the MMD cost
     def cost(self,source, target):
