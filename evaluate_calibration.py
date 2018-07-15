@@ -345,28 +345,30 @@ else:
     cal_source = calibrated_source_train_data
     source_label_filename = data_path+"/source_train_labels.csv"
     target_label_filename = data_path+"/target_train_labels.csv" 
+    
+if os.path.isfile(source_label_filename) & os.path.isfile(target_label_filename):    
 
-source_labels = np.loadtxt(source_label_filename, delimiter=',')
-target_labels = np.loadtxt(target_label_filename, delimiter=',')
-
-source_sub_pop = source[source_labels==1]
-target_sub_pop = target[target_labels==1]
-cal_source_sub_pop = cal_source[source_labels==1]
-rec_target_sub_pop = rec_target[target_labels==1]
-
-marker1 = 13 #17 'IFNg'
-marker2 = 19
-
-axis1 = 'CD28'
-axis2 = 'GzB'
-
-# before calibration
-sh.scatterHist(target_sub_pop[:,marker1], target_sub_pop[:,marker2], source_sub_pop[:,marker1], 
-               source_sub_pop[:,marker2], axis1, axis2, title="data in CD28-GzB plane before calibration", 
-               name1='target', name2='source')
-# after calibration 
-sh.scatterHist(rec_target_sub_pop[:,marker1], rec_target_sub_pop[:,marker2], cal_source_sub_pop[:,marker1], 
-               cal_source_sub_pop[:,marker2], axis1, axis2, title="data in CD28-GzB plane after calibration", 
-               name1='target', name2='source')
+    source_labels = np.loadtxt(source_label_filename, delimiter=',')
+    target_labels = np.loadtxt(target_label_filename, delimiter=',')
+    
+    source_sub_pop = source[source_labels==1]
+    target_sub_pop = target[target_labels==1]
+    cal_source_sub_pop = cal_source[source_labels==1]
+    rec_target_sub_pop = rec_target[target_labels==1]
+    
+    marker1 = 13 #17 'IFNg'
+    marker2 = 19
+    
+    axis1 = 'CD28'
+    axis2 = 'GzB'
+    
+    # before calibration
+    sh.scatterHist(target_sub_pop[:,marker1], target_sub_pop[:,marker2], source_sub_pop[:,marker1], 
+                   source_sub_pop[:,marker2], axis1, axis2, title="data in CD28-GzB plane before calibration", 
+                   name1='target', name2='source')
+    # after calibration 
+    sh.scatterHist(rec_target_sub_pop[:,marker1], rec_target_sub_pop[:,marker2], cal_source_sub_pop[:,marker1], 
+                   cal_source_sub_pop[:,marker2], axis1, axis2, title="data in CD28-GzB plane after calibration", 
+                   name1='target', name2='source')
 
 
