@@ -7,14 +7,20 @@ Created on Jul 6, 2018
 import os
 from sklearn import decomposition
 import numpy as np
+import argparse
 import scatterHist as sh
 
 
+# ==============================================================================
+# =                                inputs arguments                            =
+# ==============================================================================
 
-
-
-# MMD of same biology and different batch in code space, with and without adv loss
+parser = argparse.ArgumentParser()
+parser.add_argument('--use_test', dest='use_test', type=int, default=True, 
+                    help="wether there are separate test data files")
    
+args = parser.parse_args()
+use_test = args.use_test
 
 # ==============================================================================
 # =                                 load data                                  =
@@ -32,6 +38,24 @@ calibrated_source_test_data = np.loadtxt(calibrated_data_dir+'/calibrated_source
                                          , delimiter=',')
 reconstructed_target_test_data = np.loadtxt(calibrated_data_dir+'/reconstructed_target_test_data.csv'
                                          , delimiter=',')
+source_test_code = np.loadtxt(calibrated_data_dir+'/source_test_code.csv'
+                                         , delimiter=',')
+target_test_code = np.loadtxt(calibrated_data_dir+'/target_test_code.csv'
+                                         , delimiter=',')
+if use_test:
+    source_train_data = np.loadtxt(calibrated_data_dir+'/source_train_data.csv', delimiter=',')
+    target_train_data = np.loadtxt(calibrated_data_dir+'/target_train_data.csv', delimiter=',')
+    reconstructed_source_train_data = np.loadtxt(calibrated_data_dir+'/reconstructed_source_train_data.csv'
+                                             , delimiter=',')
+    calibrated_source_train_data = np.loadtxt(calibrated_data_dir+'/calibrated_source_train_data.csv'
+                                             , delimiter=',')
+    reconstructed_target_train_data = np.loadtxt(calibrated_data_dir+'/reconstructed_target_train_data.csv'
+                                             , delimiter=',')
+    source_train_code = np.loadtxt(calibrated_data_dir+'/source_train_code.csv'
+                                             , delimiter=',')
+    target_train_code = np.loadtxt(calibrated_data_dir+'/target_train_code.csv'
+                                             , delimiter=',')
+
 
 # ==============================================================================
 # =         visualize calibration and reconstruction in PC subspace            =
@@ -50,8 +74,14 @@ target_test_data_pca = pca.transform(target_test_data)
 reconstructed_source_test_data_pca = pca.transform(reconstructed_source_test_data)
 calibrated_source_test_data = pca.transform(calibrated_source_test_data)
 reconstructed_target_test_data_pca = pca.transform(reconstructed_target_test_data)
-
+if use_test:
+    source_train_data_pca = pca.transform(source_train_data)
+    target_train_data_pca = pca.transform(target_train_data)
+    reconstructed_source_train_data_pca = pca.transform(reconstructed_source_train_data)
+    calibrated_source_train_data = pca.transform(calibrated_source_train_data)
+    reconstructed_target_train_data_pca = pca.transform(reconstructed_target_train_data)
 # plot reconstructions
+    
 sh.scatterHist(target_test_data_pca[:,pc1], target_test_data_pca[:,pc2], 
                reconstructed_target_test_data_pca[:,pc1], 
                reconstructed_target_test_data_pca[:,pc2], 
@@ -63,22 +93,47 @@ sh.scatterHist(source_test_data_pca[:,pc1], source_test_data_pca[:,pc2],
                reconstructed_source_test_data_pca[:,pc2], 
                axis1, axis2, title="source test data reconstruction", 
                name1='true', name2='recon')
+if use_test:
+    sh.scatterHist(target_train_data_pca[:,pc1], target_train_data_pca[:,pc2], 
+               reconstructed_target_train_data_pca[:,pc1], 
+               reconstructed_target_train_data_pca[:,pc2], 
+               axis1, axis2, title="target train data reconstruction", 
+               name1='true', name2='recon')
+
+    sh.scatterHist(source_train_data_pca[:,pc1], source_train_data_pca[:,pc2], 
+               reconstructed_source_train_data_pca[:,pc1], 
+               reconstructed_source_train_data_pca[:,pc2], 
+               axis1, axis2, title="source train data reconstruction", 
+               name1='true', name2='recon')
+
 
 
 # plot data before and after calibration
 sh.scatterHist(target_test_data_pca[:,pc1], target_test_data_pca[:,pc2], 
                source_test_data_pca[:,pc1], 
                source_test_data_pca[:,pc2], 
-               axis1, axis2, title="before calibration", 
+               axis1, axis2, title="test data before calibration", 
                name1='target', name2='source')
 
 sh.scatterHist(reconstructed_target_test_data_pca[:,pc1], 
                reconstructed_target_test_data_pca[:,pc2], 
                calibrated_source_test_data[:,pc1], 
                calibrated_source_test_data[:,pc2], 
-               axis1, axis2, title="after calibration", 
+               axis1, axis2, title="test data after calibration", 
+               name1='target', name2='source')
+if use_test:
+    sh.scatterHist(target_train_data_pca[:,pc1], target_train_data_pca[:,pc2], 
+               source_train_data_pca[:,pc1], 
+               source_train_data_pca[:,pc2], 
+               axis1, axis2, title="train data before calibration", 
                name1='target', name2='source')
 
+    sh.scatterHist(reconstructed_target_train_data_pca[:,pc1], 
+               reconstructed_target_train_data_pca[:,pc2], 
+               calibrated_source_train_data[:,pc1], 
+               calibrated_source_train_data[:,pc2], 
+               axis1, axis2, title="train data after calibration", 
+               name1='target', name2='source')
 
 ##################################### qualitative evaluation: per-marker empirical cdfs #####################################
 # plot a few markers before and after calibration

@@ -12,7 +12,7 @@ import models
 from numpy import *
 
 
-def get_data(path, data_type):
+def get_data(path, data_type, use_test):
     source_train_data_filename = path+"/source_train_data.csv"
     target_train_data_filename = path+"/target_train_data.csv"
     source_test_data_filename = path+"/source_test_data.csv"
@@ -23,16 +23,20 @@ def get_data(path, data_type):
     min_n = np.min([len(source_train_data), len(target_train_data)])
     source_train_data[isnan(source_train_data)] = 0
     target_train_data[isnan(target_train_data)] = 0
-    if os.path.isfile(source_test_data_filename):
+    if use_test & os.path.isfile(source_test_data_filename):
+        print('using source test data: '+source_test_data_filename )
         source_test_data = np.loadtxt(source_test_data_filename, delimiter=',')
         source_test_data[isnan(source_test_data)] = 0
     else:    
         source_test_data = source_train_data
-    if os.path.isfile(target_test_data_filename):  
+        print('using same source  data for training and testing')
+    if use_test &  os.path.isfile(target_test_data_filename):  
+        print('using target test data: '+target_test_data_filename )
         target_test_data = np.loadtxt(target_test_data_filename, delimiter=',')
         target_test_data[isnan(target_test_data)] = 0
     else:
         target_test_data = target_train_data
+        print('using same target  data for training and testing')
     # do log transformation for cytof data    
     if data_type == 'cytof':
         source_train_data = preProcessCytofData(source_train_data)
