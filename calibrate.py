@@ -34,17 +34,15 @@ if os.path.exists('./output'):
 parser = argparse.ArgumentParser()
 parser.add_argument('--use_test', dest='use_test', type=int, default=True, 
                     help="wether there are separate test data files")
-parser.add_argument('--n_epochs', dest='n_epochs', type=int, default=100, help="number of training epochs")
+parser.add_argument('--n_epochs', dest='n_epochs', type=int, default=200, help="number of training epochs")
 parser.add_argument('--batch_size', dest='batch_size', type=int, default=64, help="minibatch size")
 parser.add_argument('--lr', dest='lr', type=float, default=1e-3, help='initial learning rate')
 parser.add_argument('--code_dim', dest='code_dim', type=int, default=15, help='dimension of code space')
-parser.add_argument('--beta', dest='beta', type=float, default=.2, help="KL coefficient")
-parser.add_argument('--gamma', dest='gamma', type=float, default=100., help="adversarial loss coefficient")
-parser.add_argument('--delta', dest='delta', type=float, default=1., help="gp loss coefficient")
+parser.add_argument('--beta', dest='beta', type=float, default=.1, help="KL coefficient")
+parser.add_argument('--gamma', dest='gamma', type=float, default=100, help="adversarial loss coefficient")
+parser.add_argument('--delta', dest='delta', type=float, default=.1, help="gp loss coefficient")
 parser.add_argument('--data_path', dest='data_path', default='./Data', help="path to data folder")
 parser.add_argument('--data_type', dest='data_type', default='cytof', help="type of data")
-parser.add_argument('--recover_org_scale', dest='recover_org_scale', default=False, \
-                    help="wether to save the calibrated data in the original scale")
 parser.add_argument('--model', dest='model_name', default='cytof_basic')
 parser.add_argument('--experiment_name', dest='experiment_name', 
                     default=datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y"))
@@ -63,7 +61,6 @@ data_path = args.data_path
 data_type = args.data_type
 model_name = args.model_name
 experiment_name = args.experiment_name
-recover_org_scale = args.recover_org_scale
 
 pylib.mkdir('./output/%s' % experiment_name)
 with open('./output/%s/setting.txt' % experiment_name, 'w') as f:
@@ -269,19 +266,6 @@ if use_test:
 sess.close()
 
 
-if recover_org_scale:
-    target_train_data = utils.recover_org_scale(target_train_data, data_type, preprocessor)
-    source_train_data = utils.recover_org_scale(source_train_data, data_type, preprocessor)
-    t_rec_train = utils.recover_org_scale(t_rec_train, data_type, preprocessor)
-    s_rec_train = utils.recover_org_scale(s_rec_train, data_type, preprocessor)
-    s_cal_train = utils.recover_org_scale(s_cal_train, data_type, preprocessor)
-    if use_test:
-        target_test_data = utils.recover_org_scale(target_test_data, data_type, preprocessor)
-        source_test_data = utils.recover_org_scale(source_test_data, data_type, preprocessor)
-        t_rec_test = utils.recover_org_scale(t_rec_test, data_type, preprocessor)
-        s_rec_test = utils.recover_org_scale(s_rec_test, data_type, preprocessor)
-        s_cal_test = utils.recover_org_scale(s_cal_test, data_type, preprocessor)
-
 target_pca = pca.transform(target_train_data)
 source_pca = pca.transform(source_train_data)
 sh.scatterHist(target_pca[:,pc1], target_pca[:,pc2], source_pca[:,pc1], 
@@ -299,6 +283,7 @@ sh.scatterHist(target_rec_pca[:,pc1], target_rec_pca[:,pc2],
 # =                                  save data                                 =
 # ==============================================================================
 
+# save data for visualization
 save_dir = './output/%s/calibrated_data' % experiment_name
 pylib.mkdir(save_dir)
 np.savetxt(fname=save_dir+'/calibrated_source_train_data.csv', X=s_cal_train, delimiter=',')
@@ -316,5 +301,27 @@ if use_test:
     np.savetxt(fname=save_dir+'/target_test_data.csv', X=target_test_data, delimiter=',')
     np.savetxt(fname=save_dir+'/source_test_code.csv', X=s_c_test, delimiter=',')
     np.savetxt(fname=save_dir+'/target_test_code.csv', X=t_c_test, delimiter=',')
+    
+# save data in original scale
+save_dir = './output/%s/calibrated_data_org_scale' % experiment_name 
+pylib.mkdir(save_dir)
 
+target_train_data = utils.recover_org_scale(target_train_data, data_type, preprocessor)
+source_train_data = utils.recover_org_scale(source_train_data, data_type, preprocessor)
+t_rec_train = utils.recover_org_scale(t_rec_train, data_type, preprocessor)
+s_cal_train = utils.recover_org_scale(s_cal_train, data_type, preprocessor)
+np.savetxt(fname=save_dir+'/source_train_data.csv', X=source_train_data, delimiter=',')
+np.savetxt(fname=save_dir+'/target_train_data.csv', X=target_train_data, delimiter=',')
+np.savetxt(fname=save_dir+'/calibrated_source_train_data.csv', X=s_cal_train, delimiter=',')
+np.savetxt(fname=save_dir+'/caalibrated_source_train_data.csv', X=t_rec_train, delimiter=',')
+if use_test:
+    target_test_data = utils.recover_org_scale(target_test_data, data_type, preprocessor)
+    source_test_data = utils.recover_org_scale(source_test_data, data_type, preprocessor)
+    t_rec_test = utils.recover_org_scale(t_rec_test, data_type, preprocessor)
+    s_cal_test = utils.recover_org_scale(s_cal_test, data_type, preprocessor)
+    np.savetxt(fname=save_dir+'/source_test_data.csv', X=source_train_data, delimiter=',')
+    np.savetxt(fname=save_dir+'/target_test_data.csv', X=target_train_data, delimiter=',')
+    np.savetxt(fname=save_dir+'/calibrated_source_test_data.csv', X=s_cal_train, delimiter=',')
+    np.savetxt(fname=save_dir+'/calibrated_source_test_data.csv', X=t_rec_train, delimiter=',')
+    
 print ('finished')
