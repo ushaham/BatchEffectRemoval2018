@@ -222,18 +222,10 @@ try:
 
             # display
             if (it + 1) % 1 == 0:
-                print("Epoch: (%3d) (%5d/%5d)" % (ep+1, it+1, iters_per_epoch))
+                print("Epoch: (%3d/%5d) iteration: (%5d/%5d)" % (ep+1,n_epochs, it+1, iters_per_epoch))
                 
         s_cal = sess.run(rec_a1, feed_dict={input_a: source_train_data[:n_s]})
         t_rec = sess.run(rec_a1, feed_dict={input_a: target_train_data[:n_t]})
-        
-        target_pca = pca.transform(t_rec)
-        source_pca = pca.transform(s_cal)
-        sh.scatterHist(target_pca[:,pc1], target_pca[:,pc2], 
-                       source_pca[:,pc1], source_pca[:,pc2], 
-                       axis1, axis2, title="during training, epoch: %3d" % (ep+1), 
-                       name1='target', name2='source')
-
         
         save_dir = './output/%s/sample_training' % experiment_name
         save_path = saver.save(sess, '%s/Epoch_%d.ckpt' % (ckpt_dir, ep))
