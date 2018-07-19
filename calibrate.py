@@ -16,6 +16,7 @@ from functools import partial
 import os.path
 from sklearn import decomposition
 import tensorflow as tf
+import os
 
 import tflib as tl
 import utils
@@ -315,5 +316,6 @@ if use_test:
     np.savetxt(fname=save_dir+'/target_test_data.csv', X=target_train_data, delimiter=',')
     np.savetxt(fname=save_dir+'/calibrated_source_test_data.csv', X=s_cal_train, delimiter=',')
     np.savetxt(fname=save_dir+'/calibrated_source_test_data.csv', X=t_rec_train, delimiter=',')
-    
-print ('finished')
+
+print ('Data saved successfully')
+input("Press Enter to exit")     

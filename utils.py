@@ -165,7 +165,7 @@ class MMD:
                 med[ii]=np.median(distances[:,1:n_neighbors])
             med = np.median(med)  
             scales = [med/2, med, med*2] # CyTOF    
-            print(scales)
+            #print(scales)
         scales = K.variable(value=np.asarray(scales))
         if weights == None:
             print("setting all scale weights to 1")

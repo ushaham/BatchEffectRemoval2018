@@ -62,4 +62,4 @@ def scatterHist(x1,x2, y1,y2, axis1='', axis2='', title='', name1='', name2=''):
     
     axHistx.set_title(title)
     axScatter.legend([name1, name2])
-    plt.show()
+    plt.show(block=False)

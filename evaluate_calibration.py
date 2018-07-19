@@ -24,11 +24,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--use_test', dest='use_test', type=int, default=True, 
                     help="wether there are separate test data files")
 parser.add_argument('--data_path', dest='data_path', default='./Data', help="path to data folder")
+parser.add_argument('--data_type', dest='data_type', default='cytof', help="type of data")
 
    
 args = parser.parse_args()
 use_test = args.use_test
 data_path = args.data_path
+data_type = args.data_type
 
 
 # ==============================================================================
@@ -65,7 +67,8 @@ if use_test:
     target_test_code = np.loadtxt(calibrated_data_dir+'/target_test_code.csv'
                                              , delimiter=',')
 
-
+input("Data loaded, press Enter to view reconstructions")
+plt.close("all")
 # ==============================================================================
 # =         visualize calibration and reconstruction in PC subspace            =
 # ==============================================================================
@@ -91,34 +94,36 @@ if use_test:
     reconstructed_target_test_data_pca = pca.transform(reconstructed_target_test_data)
 
 # plot reconstructions
-    
 sh.scatterHist(target_train_data_pca[:,pc1], target_train_data_pca[:,pc2], 
                reconstructed_target_train_data_pca[:,pc1], 
                reconstructed_target_train_data_pca[:,pc2], 
                axis1, axis2, title="target train data reconstruction", 
                name1='true', name2='recon')
-
+  
 sh.scatterHist(source_train_data_pca[:,pc1], source_train_data_pca[:,pc2], 
                reconstructed_source_train_data_pca[:,pc1], 
                reconstructed_source_train_data_pca[:,pc2], 
                axis1, axis2, title="source train data reconstruction", 
                name1='true', name2='recon')
-if use_test:
+if use_test:   
     sh.scatterHist(target_test_data_pca[:,pc1], target_test_data_pca[:,pc2], 
                reconstructed_target_test_data_pca[:,pc1], 
                reconstructed_target_test_data_pca[:,pc2], 
                axis1, axis2, title="target test data reconstruction", 
                name1='true', name2='recon')
-
+   
     sh.scatterHist(source_test_data_pca[:,pc1], source_test_data_pca[:,pc2], 
                reconstructed_source_test_data_pca[:,pc1], 
                reconstructed_source_test_data_pca[:,pc2], 
                axis1, axis2, title="source test data reconstruction", 
                name1='true', name2='recon')
 
+input("Press Enter to view calibration")
+plt.close("all")
 
 
 # plot data before and after calibration
+
 sh.scatterHist(target_train_data_pca[:,pc1], target_train_data_pca[:,pc2], 
                source_train_data_pca[:,pc1], 
                source_train_data_pca[:,pc2], 
@@ -144,6 +149,9 @@ if use_test:
                calibrated_source_test_data_pca[:,pc2], 
                axis1, axis2, title="test data after calibration", 
                name1='target', name2='source')
+
+input("Press Enter to view per-marker calibration")
+plt.close("all")
 
 # ==============================================================================
 # =                               per-marker CDF                               =
@@ -193,7 +201,7 @@ for i in range(np.min([3,target.shape[1]])):
     a1.set_xticklabels([])
     plt.legend(['target before cal.', 'source before cal.'], loc=0 ,prop={'size':16})
     plt.title(marker_names[i])
-    plt.show() 
+    plt.show(block=False) 
     fig = plt.figure()
     a2 = fig.add_subplot(111)
     #a2.plot(at_ecdf, '-', color = 'black') 
@@ -203,8 +211,11 @@ for i in range(np.min([3,target.shape[1]])):
     a2.set_xticklabels([])
     plt.legend(['target after cal.', 'source after cal.'], loc=0 ,prop={'size':16})
     plt.title(marker_names[i])
-    plt.show() 
+    plt.show(block=False) 
     
+input("Press Enter to view correlations")   
+plt.close("all")
+ 
 # ==============================================================================
 # =                            Correlation matrices                            =
 # ==============================================================================
@@ -250,8 +261,11 @@ fig = plt.figure()
 plt.hist(f[:,:2], bins = 10, normed=True, histtype='bar')
 plt.legend(['before calib.', 'after calib.'], loc=2)
 plt.yticks([])
-plt.show()
+plt.title('magnitude of difference of correlation coefficients')
+plt.show(block=False)
 
+input("Press Enter to view MMD analysis") 
+plt.close("all")
 # ==============================================================================
 # =                                      MMD                                   =
 # ==============================================================================
@@ -274,10 +288,12 @@ mmd_after = np.zeros(3)
 mmd_target_target_before = np.zeros(3)
 mmd_target_target_after = np.zeros(3)
 
+num_pts=500
+
 for i in range(3):
-    source_inds = np.random.randint(low=0, high = source.shape[0], size = 1000)
-    target_inds = np.random.randint(low=0, high = target.shape[0], size = 1000)
-    target_inds1 = np.random.randint(low=0, high = target.shape[0], size = 1000)
+    source_inds = np.random.randint(low=0, high = source.shape[0], size = num_pts)
+    target_inds = np.random.randint(low=0, high = target.shape[0], size = num_pts)
+    target_inds1 = np.random.randint(low=0, high = target.shape[0], size = num_pts)
     mmd_before[i] = K.eval(utils.MMD(source,target).cost(K.variable(value=source[source_inds]), 
               K.variable(value=target[target_inds])))
     mmd_after[i] = K.eval(utils.MMD(cal_source,rec_target).cost(K.variable(value=cal_source[source_inds]), 
@@ -302,12 +318,12 @@ mmd_source_source_train = np.zeros(3)
 mmd_target_target_train = np.zeros(3)
 
 for i in range(3):
-    source_train_inds = np.random.randint(low=0, high = source_train_code.shape[0], size = 1000)
-    source_train_inds1 = np.random.randint(low=0, high = source_train_code.shape[0], size = 1000)
-    source_test_inds = np.random.randint(low=0, high = source_test_code.shape[0], size = 1000)
-    target_train_inds = np.random.randint(low=0, high = target_train_code.shape[0], size = 1000)
-    target_train_inds1 = np.random.randint(low=0, high = target_train_code.shape[0], size = 1000)
-    target_test_inds = np.random.randint(low=0, high = target_test_code.shape[0], size = 1000)
+    source_train_inds = np.random.randint(low=0, high = source_train_code.shape[0], size = num_pts)
+    source_train_inds1 = np.random.randint(low=0, high = source_train_code.shape[0], size = num_pts)
+    source_test_inds = np.random.randint(low=0, high = source_test_code.shape[0], size = num_pts)
+    target_train_inds = np.random.randint(low=0, high = target_train_code.shape[0], size = num_pts)
+    target_train_inds1 = np.random.randint(low=0, high = target_train_code.shape[0], size = num_pts)
+    target_test_inds = np.random.randint(low=0, high = target_test_code.shape[0], size = num_pts)
     mmd_source_target_train[i] = K.eval(utils.MMD(source_train_code,target_train_code).cost(K.variable(value=source_train_code[source_train_inds]), 
               K.variable(value=target_train_code[target_train_inds])))
     mmd_source_target_test[i] = K.eval(utils.MMD(source_test_code,target_test_code).cost(K.variable(value=source_test_code[source_test_inds]), 
@@ -325,50 +341,54 @@ print('MMD source-source_train in code space after calibration: %.2f pm %.2f'%(n
                                                                          np.std(mmd_source_source_train)))
 print('MMD target-target_train in code space after calibration: %.2f pm %.2f'%(np.mean(mmd_target_target_train),
                                                                          np.std(mmd_target_target_train)))
-    
+
+input("Press Enter to view CD-8 analysis (for cytof data)") 
+plt.close("all")    
 # ==============================================================================
 # =                              CD8 sub-population                            =
 # ==============================================================================
-
-if use_test:
-    target_labels = target_test_data
-    source_labels = source_test_data
-    rec_target = reconstructed_target_test_data
-    cal_source = calibrated_source_test_data
-    source_label_filename = data_path+"/source_test_labels.csv"
-    target_label_filename = data_path+"/target_test_labels.csv" 
-
-else:
-    target = target_train_data
-    source = source_train_data
-    rec_target = reconstructed_target_train_data
-    cal_source = calibrated_source_train_data
-    source_label_filename = data_path+"/source_train_labels.csv"
-    target_label_filename = data_path+"/target_train_labels.csv" 
+if data_type=='cytof':
+    if use_test:
+        target_labels = target_test_data
+        source_labels = source_test_data
+        rec_target = reconstructed_target_test_data
+        cal_source = calibrated_source_test_data
+        source_label_filename = data_path+"/source_test_labels.csv"
+        target_label_filename = data_path+"/target_test_labels.csv" 
     
-if os.path.isfile(source_label_filename) & os.path.isfile(target_label_filename):    
+    else:
+        target = target_train_data
+        source = source_train_data
+        rec_target = reconstructed_target_train_data
+        cal_source = calibrated_source_train_data
+        source_label_filename = data_path+"/source_train_labels.csv"
+        target_label_filename = data_path+"/target_train_labels.csv" 
+        
+    if os.path.isfile(source_label_filename) & os.path.isfile(target_label_filename):    
+    
+        source_labels = np.loadtxt(source_label_filename, delimiter=',')
+        target_labels = np.loadtxt(target_label_filename, delimiter=',')
+        
+        source_sub_pop = source[source_labels==1]
+        target_sub_pop = target[target_labels==1]
+        cal_source_sub_pop = cal_source[source_labels==1]
+        rec_target_sub_pop = rec_target[target_labels==1]
+        
+        marker1 = 13 #17 'IFNg'
+        marker2 = 19
+        
+        axis1 = 'CD28'
+        axis2 = 'GzB'
+        
+        # before calibration
+        sh.scatterHist(target_sub_pop[:,marker1], target_sub_pop[:,marker2], source_sub_pop[:,marker1], 
+                       source_sub_pop[:,marker2], axis1, axis2, title="data in CD28-GzB plane before calibration", 
+                       name1='target', name2='source')
+        # after calibration 
+        sh.scatterHist(rec_target_sub_pop[:,marker1], rec_target_sub_pop[:,marker2], cal_source_sub_pop[:,marker1], 
+                       cal_source_sub_pop[:,marker2], axis1, axis2, title="data in CD28-GzB plane after calibration", 
+                       name1='target', name2='source')
 
-    source_labels = np.loadtxt(source_label_filename, delimiter=',')
-    target_labels = np.loadtxt(target_label_filename, delimiter=',')
-    
-    source_sub_pop = source[source_labels==1]
-    target_sub_pop = target[target_labels==1]
-    cal_source_sub_pop = cal_source[source_labels==1]
-    rec_target_sub_pop = rec_target[target_labels==1]
-    
-    marker1 = 13 #17 'IFNg'
-    marker2 = 19
-    
-    axis1 = 'CD28'
-    axis2 = 'GzB'
-    
-    # before calibration
-    sh.scatterHist(target_sub_pop[:,marker1], target_sub_pop[:,marker2], source_sub_pop[:,marker1], 
-                   source_sub_pop[:,marker2], axis1, axis2, title="data in CD28-GzB plane before calibration", 
-                   name1='target', name2='source')
-    # after calibration 
-    sh.scatterHist(rec_target_sub_pop[:,marker1], rec_target_sub_pop[:,marker2], cal_source_sub_pop[:,marker1], 
-                   cal_source_sub_pop[:,marker2], axis1, axis2, title="data in CD28-GzB plane after calibration", 
-                   name1='target', name2='source')
 
-
+input("Press Enter to exit")     
+plt.close("all")
