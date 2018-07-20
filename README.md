@@ -17,8 +17,12 @@ Training:
 
 
 Usage example:
-CUDA_VISIBLE_DEVICES=0 python calibrate.py --code_dim 15 --beta 0.1 --gamma 100. --delta .1 --data_path \Data --model cytof_basic
---experiment_name c10_beta0.1_gamma100.0_delta.1_cytof_basic
+CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" -- model "resnet" --code_dim 15 --beta 0.1 --gamma 100. --delta .1 --data_path \Data --model cytof_basic
+--experiment_name c10_beta0.1_gamma100.0_delta.1_cytof_resnet
+
+CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "other" --use_test False -- model "resnet" --code_dim 15 --beta 0.1 --gamma 100. --delta .1 --data_path \Data --model cytof_basic
+--experiment_name c10_beta0.1_gamma100.0_delta.1_scRNA-seq_resnet
+
 
 
 In addition, we provide an evaluation script that examins the reconstruction errors, plots the calibrated data, examines correlation coefficients and calculated MMD estimates.

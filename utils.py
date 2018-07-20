@@ -47,8 +47,8 @@ def get_data(path, data_type, use_test):
         target_train_data = preProcessCytofData(target_train_data)
         target_test_data = preProcessCytofData(target_test_data)
         
-        source_train_data, source_test_data, _ = standard_scale(source_train_data, source_test_data)
-        target_train_data, target_test_data, preprocessor = standard_scale(target_train_data, target_test_data)
+    source_train_data, source_test_data, _ = standard_scale(source_train_data, source_test_data)
+    target_train_data, target_test_data, preprocessor = standard_scale(target_train_data, target_test_data)
         
     return  source_train_data, target_train_data, source_test_data, target_test_data, min_n, preprocessor
 
