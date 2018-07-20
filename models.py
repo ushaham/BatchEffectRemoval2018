@@ -137,7 +137,7 @@ def _multihead_attention(queries,
                         keys, 
                         is_training,
                         num_units=20, 
-                        num_heads=8, 
+                        num_heads=5, 
                         dropout_rate=0,
                         reuse=None):
     '''Applies multihead attention.
