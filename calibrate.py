@@ -44,7 +44,8 @@ parser.add_argument('--gamma', dest='gamma', type=float, default=100, help="adve
 parser.add_argument('--delta', dest='delta', type=float, default=.1, help="gp loss coefficient")
 parser.add_argument('--data_path', dest='data_path', default='./Data', help="path to data folder")
 parser.add_argument('--data_type', dest='data_type', default='cytof', help="type of data")
-parser.add_argument('--model', dest='model_name', default='cytof_basic')
+parser.add_argument('--model', dest='model_name', default='cytof_transformer', help="model architecture, \
+                    either cytof_basic of cytof_transformer")
 parser.add_argument('--experiment_name', dest='experiment_name', 
                     default=datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y"))
 
