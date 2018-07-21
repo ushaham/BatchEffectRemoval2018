@@ -19,6 +19,54 @@ lrelu = tf.nn.leaky_relu
 relu = tf.nn.relu
 batch_norm = partial(slim.batch_norm, scale=True, updates_collections=None)
 
+def mlp():
+    
+    def Enc(inputs, 
+            hidden_dim=20, 
+            code_dim=5, 
+            is_training=True):
+        
+        with tf.variable_scope('Encoder', reuse=tf.AUTO_REUSE):
+            y = fc(inputs, hidden_dim)
+            y = lrelu(y)
+            c_mu = fc(y, code_dim)
+            c_log_sigma_sq = fc(y, code_dim)
+        return c_mu, c_log_sigma_sq
+    
+    def Dec_a(code, 
+              output_dim, 
+              hidden_dim=20, 
+            is_training=True):
+        
+        with tf.variable_scope('Decoder_a', reuse=tf.AUTO_REUSE):
+            y = fc(code, hidden_dim)
+            y = lrelu(y)
+            recon = fc(y, output_dim)
+        return recon
+    
+    def Dec_b(code, 
+              output_dim, 
+              hidden_dim=20, 
+            is_training=True):
+        
+        with tf.variable_scope('Decoder_b', reuse=tf.AUTO_REUSE):
+            y = fc(code, hidden_dim)
+            y = lrelu(y)
+            recon = fc(y, output_dim)
+        return recon
+            
+    def Disc(code, 
+             hidden_dim=20):
+        
+        with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
+            y = fc(code, hidden_dim)
+            y = lrelu(y)
+            output = fc(y, 1)
+        return output    
+    
+    return Enc, Dec_a, Dec_b, Disc
+
+
 def _resnet_block_v2(inputs, 
                      block_dim, 
                      is_training,
@@ -45,8 +93,8 @@ def resnet():
             is_training=True):
         
         with tf.variable_scope('Encoder', reuse=tf.AUTO_REUSE):
-            y = batch_norm(inputs, is_training)
-            y = lrelu(y)
+            inputs = batch_norm(inputs, is_training)
+            y = lrelu(inputs)
             y = fc(y, block_dim)
             for _ in range(n_blocks):
                 y = _resnet_block_v2(y, block_dim, is_training)
@@ -61,8 +109,8 @@ def resnet():
               is_training=True):
         
         with tf.variable_scope('Decoder_a', reuse=tf.AUTO_REUSE):
-            y = batch_norm(code, is_training)
-            y = lrelu(y)
+            code = batch_norm(code, is_training)
+            y = lrelu(code)
             y = fc(y, block_dim)
             for _ in range(n_blocks):
                 y = _resnet_block_v2(y, block_dim, is_training)
@@ -76,8 +124,8 @@ def resnet():
               is_training=True):
         
         with tf.variable_scope('Decoder_b', reuse=tf.AUTO_REUSE):
-            y = batch_norm(code, is_training)
-            y = lrelu(y)
+            code = batch_norm(code, is_training)
+            y = lrelu(code)
             y = fc(y, block_dim)
             for _ in range(n_blocks):
                 y = _resnet_block_v2(y, block_dim, is_training)
@@ -90,8 +138,8 @@ def resnet():
              is_training=True):
         
         with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
-            y = batch_norm(code, is_training)
-            y = lrelu(y)
+            code = batch_norm(code, is_training)
+            y = lrelu(code)
             y = fc(y, block_dim)
             for _ in range(n_blocks):
                 y = _resnet_block_v2(y, block_dim, is_training)
@@ -172,67 +220,11 @@ def _multihead_attention(keys,
   
         # Residual connection
         outputs += keys # (N, h)
-        print(outputs.get_shape().as_list())
 
         # Normalize
-        outputs = _normalize(outputs) # (N, h)
+        #outputs = _normalize(outputs) # (N, h)
     
     return outputs
-
-        
-        
-    '''
-    with tf.variable_scope("multihead_attention", reuse=reuse):
-        
-        # Linear projections
-        Q = tf.layers.dense(queries, num_units, activation=tf.nn.relu) # (N, C)
-        K = tf.layers.dense(keys, num_units, activation=tf.nn.relu) # (N, C)
-        V = tf.layers.dense(keys, num_units, activation=tf.nn.relu) # (N, C)
-        
-        # Split and concat
-        Q_ = tf.concat(tf.split(Q, num_heads, axis=1), axis=0) # (h*N, C/h) 
-        K_ = tf.concat(tf.split(K, num_heads, axis=1), axis=0) # (h*N, C/h) 
-        V_ = tf.concat(tf.split(V, num_heads, axis=1), axis=0) # (h*N, C/h) 
-        
-        # Multiplication
-        outputs = tf.matmul(Q_, tf.transpose(K_)) # (h*N)
-    
-        # Scale
-        outputs = outputs / (K_.get_shape().as_list()[-1] ** 0.5)
-        
-        # Key Masking
-        key_masks = tf.sign(tf.abs(tf.reduce_sum(keys, axis=-1))) # (N)
-        key_masks = tf.tile(key_masks, [num_heads]) # (h*N)
-        
-        paddings = tf.ones_like(outputs)*(-2**32+1)
-        outputs = tf.where(tf.equal(key_masks, 0), paddings, outputs) # (h*N)
-        
-        # Activation
-        outputs = tf.nn.softmax(outputs) # (h*N)
-        
-        # Query Masking
-        query_masks = tf.sign(tf.abs(tf.reduce_sum(queries, axis=-1))) # (N)
-        query_masks = tf.tile(query_masks, [num_heads]) # (h*N)
-        outputs *= query_masks # broadcasting. (N, C)
-        
-        # Dropouts
-        outputs = tf.layers.dropout(outputs, rate=dropout_rate, training=is_training)
-        
-        # Weighted sum
-        outputs = tf.matmul(outputs, V_) # (h*N, C/h)
-        
-        # Restore shape
-        outputs = tf.concat(tf.split(outputs, num_heads, axis=0), axis=1) # (N, C)
-              
-        # Residual connection
-        outputs += queries
-              
-        # Normalize
-        outputs = _normalize(outputs) # (N, C)
- 
-    return outputs
-    '''
-
 
 def _feedforward(inputs, 
                  num_units=20,
@@ -264,33 +256,32 @@ def _feedforward(inputs,
         outputs += inputs
         
         # Normalize
-        outputs = _normalize(outputs)
+        #outputs = _normalize(outputs)
     
     return outputs
 
 def transformer():
     
-    '''
+    
     def Enc(inputs, 
             n_blocks=3, 
-            num_units=20, 
-            num_heads=5,
+            num_units=10, 
+            num_heads=8,
             code_dim=5, 
             is_training=True,
             dropout_rate=0):
         
         with tf.variable_scope('Encoder', reuse=tf.AUTO_REUSE):
-            y = fc(inputs, num_units)
+            y = fc(inputs, num_heads)
             y = lrelu(y)
             for _ in range(n_blocks):
-                y = _multihead_attention(queries=y, 
-                                         keys=y, 
+                y = _multihead_attention(keys=y, 
                                          num_units=num_units, 
                                          num_heads=num_heads, 
                                          dropout_rate=dropout_rate,
                                          is_training=is_training)
-                y = _feedforward(y,
-                                 num_units=num_units))
+                #y = _feedforward(y,
+                #                 num_units=num_units)
                 
             c_mu = fc(y, code_dim)
             c_log_sigma_sq = fc(y, code_dim)
@@ -299,23 +290,22 @@ def transformer():
     def Dec_a(code, 
               output_dim, 
               n_blocks=3, 
-              num_units=20, 
-              num_heads=5,
+              num_units=10, 
+              num_heads=8,
               is_training=True,
               dropout_rate=0):
         
         with tf.variable_scope('Decoder_a', reuse=tf.AUTO_REUSE):
-            y = fc(code, num_units)
+            y = fc(code, num_heads)
             y = lrelu(y)
             for _ in range(n_blocks):
-                y = _multihead_attention(queries=y, 
-                                         keys=y, 
+                y = _multihead_attention(keys=y, 
                                          num_units=num_units, 
                                          num_heads=num_heads, 
                                          dropout_rate=dropout_rate,
                                          is_training=is_training)
                 y = _feedforward(y,
-                                 num_units=num_units))
+                                 num_units=num_units)
                 
             recon = fc(y, output_dim)
             return recon
@@ -323,74 +313,26 @@ def transformer():
     def Dec_b(code, 
               output_dim, 
               n_blocks=3, 
-              num_units=20,
-              num_heads=5,
+              num_units=10, 
+              num_heads=8,
               is_training=True,
               dropout_rate=0):
         
         with tf.variable_scope('Decoder_b', reuse=tf.AUTO_REUSE):
-            y = fc(code, num_units)
+            y = fc(code, num_heads)
             y = lrelu(y)
             for _ in range(n_blocks):
-                y = _multihead_attention(queries=y, 
-                                         keys=y, 
+                y = _multihead_attention(keys=y, 
                                          num_units=num_units, 
                                          num_heads=num_heads, 
                                          dropout_rate=dropout_rate,
                                          is_training=is_training)
                 y = _feedforward(y,
-                                 num_units=num_units))
+                                 num_units=num_units)
                 
             recon = fc(y, output_dim)
             return recon
         
-    '''    
-    def Enc(inputs, 
-            n_blocks=3, 
-            block_dim=20, 
-            code_dim=5, 
-            is_training=True):
-        
-        with tf.variable_scope('Encoder', reuse=tf.AUTO_REUSE):
-            y = batch_norm(inputs, is_training)
-            y = lrelu(y)
-            y = fc(y, block_dim)
-            for _ in range(n_blocks):
-                y = _resnet_block_v2(y, block_dim, is_training)
-            c_mu = fc(y, code_dim)
-            c_log_sigma_sq = fc(y, code_dim)
-        return c_mu, c_log_sigma_sq
-    
-    def Dec_a(code, 
-              output_dim, 
-              n_blocks=3, 
-              block_dim=20, 
-              is_training=True):
-        
-        with tf.variable_scope('Decoder_a', reuse=tf.AUTO_REUSE):
-            y = batch_norm(code, is_training)
-            y = lrelu(y)
-            y = fc(y, block_dim)
-            for _ in range(n_blocks):
-                y = _resnet_block_v2(y, block_dim, is_training)
-            recon = fc(y, output_dim)
-        return recon
-    
-    def Dec_b(code, 
-              output_dim, 
-              n_blocks=3, 
-              block_dim=20, 
-              is_training=True):
-        
-        with tf.variable_scope('Decoder_b', reuse=tf.AUTO_REUSE):
-            y = batch_norm(code, is_training)
-            y = lrelu(y)
-            y = fc(y, block_dim)
-            for _ in range(n_blocks):
-                y = _resnet_block_v2(y, block_dim, is_training)
-            recon = fc(y, output_dim)
-        return recon    
-            
     def Disc(code, 
              n_blocks=3, 
              num_units=10, 

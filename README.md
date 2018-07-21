@@ -16,13 +16,21 @@ Training:
 * For visualization and evaluation purposes, we also save the data in output/calibrated data. Note that this data is not in its original scale - it is processed using log transformation and z-scoring.
 
 
-Usage example:
-CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" -- model "resnet" 
---AE_type "VAE" --code_dim 15 --beta 0.1 --gamma 100. --delta .1 --data_path \Data --model cytof_basic
---experiment_name c10_beta0.1_gamma100.0_delta.1_cytof_resnet
+Usage examples:
 
-CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "other" --use_test False -- model "resnet" --code_dim 15 --beta 0.1 --gamma 100. --delta .1 --data_path \Data --model cytof_basic
---experiment_name c10_beta0.1_gamma100.0_delta.1_scRNA-seq_resnet
+CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "mlp" \
+--n_epochs 500 --AE_type "VAE" --code_dim 15 --beta .5 --gamma 100. --delta .1 \
+--data_path './Data'  --experiment_name c15_beta.5_gamma100.0_delta.1_cytof_mlp
+
+
+CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "resnet"\
+ --n_epochs 200 --AE_type "VAE" --code_dim 15 --beta 0.1 --gamma 100. --delta .1 \
+ --data_path './Data' --experiment_name c15_beta0.1_gamma100.0_delta.1_cytof_resnet
+
+CUDA_VISIBLE_DEVICES=0 python calibrate.py --n_epochs 500 --data_type "other" \
+--data_path './Data/scRNA-seq' --use_test False --model "mlp" --code_dim 15 \
+--beta 1. --gamma 100. --delta .1 \
+--experiment_name c15_beta1.0_gamma100.0_delta.1_scRNA-seq_mlp
 
 
 

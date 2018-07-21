@@ -33,9 +33,9 @@ if os.path.exists('./output'):
     shutil.rmtree('./output')
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--use_test', dest='use_test', type=int, default=True, 
+parser.add_argument('--use_test', dest='use_test', type=bool, default=True, 
                     help="wether there are separate test data files")
-parser.add_argument('--n_epochs', dest='n_epochs', type=int, default=200, 
+parser.add_argument('--n_epochs', dest='n_epochs', type=int, default=500, 
                     help="number of training epochs")
 parser.add_argument('--batch_size', dest='batch_size', type=int, default=64, 
                     help="minibatch size")
@@ -43,7 +43,7 @@ parser.add_argument('--lr', dest='lr', type=float, default=1e-3,
                     help='initial learning rate')
 parser.add_argument('--code_dim', dest='code_dim', type=int, default=15, 
                     help='dimension of code space')
-parser.add_argument('--beta', dest='beta', type=float, default=.1, 
+parser.add_argument('--beta', dest='beta', type=float, default=1., 
                     help="KL coefficient for VAE")
 parser.add_argument('--gamma', dest='gamma', type=float, default=100, 
                     help="adversarial loss coefficient")
@@ -53,12 +53,13 @@ parser.add_argument('--data_path', dest='data_path', default='./Data',
                     help="path to data folder")
 parser.add_argument('--data_type', dest='data_type', default='cytof', 
                     help="type of data, cytof or other")
-parser.add_argument('--model', dest='model_name', default='transformer', 
-                    help="model architecture, either resnet of transformer")
-parser.add_argument('--experiment_name', dest='experiment_name', 
-                    default=datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y"))
+parser.add_argument('--model', dest='model_name', default='mlp', 
+                    help="model architecture, either mlp, resnet of transformer")
 parser.add_argument('--AE_type', dest='AE_type', default='VAE', 
                     help="type of AE, either VAE or standard")
+parser.add_argument('--experiment_name', dest='experiment_name', 
+                    default=datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y"))
+
 
 
 args = parser.parse_args()
