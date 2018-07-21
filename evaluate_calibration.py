@@ -158,12 +158,15 @@ plt.close("all")
 # ==============================================================================
     
 # plot a few markers before and after calibration
-marker_names = ['CD45', 'CD19', 'CD127', 'CD4', 
-               'CD8a', 'CD20', 'CD25', 'CD278-Beads',
-                'TNFa', 'Beads-Tim3', 'CD27', 'CD14', 'CCR7',
-                 'CD28', 'CD152', 'FOXP3', 'CD45RO', 'Beads-INFg',
-                  'CD223', 'GzB', 'CD3', 'CD274', 'HLADR', 'Beads-PD1',
-                   'CD11b']
+if data_type == "cytof":
+    marker_names = ['CD45', 'CD19', 'CD127', 'CD4', 
+                   'CD8a', 'CD20', 'CD25', 'CD278-Beads',
+                    'TNFa', 'Beads-Tim3', 'CD27', 'CD14', 'CCR7',
+                     'CD28', 'CD152', 'FOXP3', 'CD45RO', 'Beads-INFg',
+                      'CD223', 'GzB', 'CD3', 'CD274', 'HLADR', 'Beads-PD1',
+                       'CD11b']
+else:
+    marker_names = None
 
 if use_test:
     target = target_test_data
@@ -210,7 +213,8 @@ for i in range(np.min([3,target.shape[1]])):
     a2.plot(as_ecdf, color = 'red') 
     a2.set_xticklabels([])
     plt.legend(['target after cal.', 'source after cal.'], loc=0 ,prop={'size':16})
-    plt.title(marker_names[i])
+    if data_type == "cytof":
+        plt.title(marker_names[i])
     plt.show(block=False) 
     
 input("Press Enter to view correlations")   

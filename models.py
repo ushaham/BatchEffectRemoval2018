@@ -170,8 +170,20 @@ def _multihead_attention(queries,
         # Scale
         outputs = outputs / (K_.get_shape().as_list()[-1] ** 0.5)
         
+        # Key Masking
+        key_masks = tf.sign(tf.abs(tf.reduce_sum(keys, axis=-1))) # (N)
+        key_masks = tf.tile(key_masks, [num_heads]) # (h*N)
+        
+        paddings = tf.ones_like(outputs)*(-2**32+1)
+        outputs = tf.where(tf.equal(key_masks, 0), paddings, outputs) # (h*N)
+        
         # Activation
         outputs = tf.nn.softmax(outputs) # (h*N)
+        
+        # Query Masking
+        query_masks = tf.sign(tf.abs(tf.reduce_sum(queries, axis=-1))) # (N)
+        query_masks = tf.tile(query_masks, [num_heads]) # (h*N)
+        outputs *= query_masks # broadcasting. (N, C)
         
         # Dropouts
         outputs = tf.layers.dropout(outputs, rate=dropout_rate, training=is_training)
@@ -245,7 +257,8 @@ def transformer():
                                          num_heads=num_heads, 
                                          dropout_rate=dropout_rate,
                                          is_training=is_training)
-                y = _feedforward(y)
+                y = _feedforward(y,
+                                 num_units=num_units))
                 
             c_mu = fc(y, code_dim)
             c_log_sigma_sq = fc(y, code_dim)
@@ -269,7 +282,8 @@ def transformer():
                                          num_heads=num_heads, 
                                          dropout_rate=dropout_rate,
                                          is_training=is_training)
-                y = _feedforward(y)
+                y = _feedforward(y,
+                                 num_units=num_units))
                 
             recon = fc(y, output_dim)
             return recon
@@ -292,7 +306,8 @@ def transformer():
                                          num_heads=num_heads, 
                                          dropout_rate=dropout_rate,
                                          is_training=is_training)
-                y = _feedforward(y)
+                y = _feedforward(y,
+                                 num_units=num_units))
                 
             recon = fc(y, output_dim)
             return recon
@@ -342,10 +357,11 @@ def transformer():
             for _ in range(n_blocks):
                 y = _resnet_block_v2(y, block_dim, is_training)
             recon = fc(y, output_dim)
+        return recon    
             
     def Disc(code, 
              n_blocks=3, 
-             num_units=20, 
+             num_units=100, 
              num_heads=5,
              is_training=True,
              dropout_rate=0):
@@ -360,7 +376,8 @@ def transformer():
                                          num_heads=num_heads, 
                                          dropout_rate=dropout_rate,
                                          is_training=is_training)
-                y = _feedforward(y)
+                y = _feedforward(y,
+                                 num_units=num_units)
                 
             output = fc(y, 1)
             return output    

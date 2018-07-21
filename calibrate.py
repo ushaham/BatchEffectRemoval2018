@@ -42,9 +42,9 @@ parser.add_argument('--code_dim', dest='code_dim', type=int, default=15, help='d
 parser.add_argument('--beta', dest='beta', type=float, default=.1, help="KL coefficient")
 parser.add_argument('--gamma', dest='gamma', type=float, default=100, help="adversarial loss coefficient")
 parser.add_argument('--delta', dest='delta', type=float, default=.1, help="gp loss coefficient")
-parser.add_argument('--data_path', dest='data_path', default='./Data/scRNA-seq', help="path to data folder")
+parser.add_argument('--data_path', dest='data_path', default='./Data', help="path to data folder")
 parser.add_argument('--data_type', dest='data_type', default='other', help="type of data, cytof or other")
-parser.add_argument('--model', dest='model_name', default='basic', help="model architecture, \
+parser.add_argument('--model', dest='model_name', default='resnet', help="model architecture, \
                     either resnet of transformer")
 parser.add_argument('--experiment_name', dest='experiment_name', 
                     default=datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y"))
