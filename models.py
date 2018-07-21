@@ -129,18 +129,17 @@ def _normalize(inputs,
         
     return outputs
 
-def _multihead_attention(queries, 
-                        keys, 
-                        is_training,
-                        num_units=20, 
-                        num_heads=5, 
-                        dropout_rate=0,
-                        reuse=None):
+def _multihead_attention(keys, 
+                         is_training,
+                         num_units=20, 
+                         num_heads=5, 
+                         dropout_rate=0,
+                         reuse=None):
     '''Applies multihead attention.
     
     Args:
-      queries: A 2d tensor with shape of [N, C_q].
-      keys: A 2d tensor with shape of [N, C_k].
+
+      keys: A 2d tensor with shape of [N, h].
       num_units: A scalar. Attention size.
       dropout_rate: A floating point number.
       is_training: Boolean. Controller of mechanism for dropout.
@@ -149,9 +148,40 @@ def _multihead_attention(queries,
         by the same name.
         
     Returns
-      A 3d tensor with shape of (N, T_q, C)  
+      A 2d tensor with shape of (N, h)  
     '''
     
+    with tf.variable_scope("multihead_attention", reuse=reuse):
+        # Linear projections
+        proj = tf.layers.dense(keys, num_units * num_heads, activation=lrelu) # (N, c*h)
+        attn_weights = tf.layers.dense(keys, num_units * num_heads, activation=lrelu) # (N, c*h)
+        
+        # Split and concat
+        proj_ = tf.concat(tf.split(proj, num_heads, axis=1), axis=0) # (h*N, c) 
+        attn_weights_ = tf.concat(tf.split(attn_weights, num_heads, axis=1), axis=0) # (h*N, c) 
+
+        # Activation
+        attn_weights_ = tf.nn.softmax(attn_weights_) # (h*N, c) 
+        
+        # Weighted sum
+        outputs = tf.matmul(proj_, tf.transpose(attn_weights_)) # (h*N, h*N)
+        outputs = tf.diag_part(outputs) # (h*N)
+        
+        # Restore shape
+        outputs = tf.concat(tf.split(tf.expand_dims(outputs,1), num_heads, axis=0), axis=1) # (N, h)
+  
+        # Residual connection
+        outputs += keys # (N, h)
+        print(outputs.get_shape().as_list())
+
+        # Normalize
+        outputs = _normalize(outputs) # (N, h)
+    
+    return outputs
+
+        
+        
+    '''
     with tf.variable_scope("multihead_attention", reuse=reuse):
         
         # Linear projections
@@ -189,7 +219,7 @@ def _multihead_attention(queries,
         outputs = tf.layers.dropout(outputs, rate=dropout_rate, training=is_training)
         
         # Weighted sum
-        outputs = tf.matmul(outputs, V_) # ( h*N, C/h)
+        outputs = tf.matmul(outputs, V_) # (h*N, C/h)
         
         # Restore shape
         outputs = tf.concat(tf.split(outputs, num_heads, axis=0), axis=1) # (N, C)
@@ -201,31 +231,33 @@ def _multihead_attention(queries,
         outputs = _normalize(outputs) # (N, C)
  
     return outputs
+    '''
 
 
 def _feedforward(inputs, 
                  num_units=20,
-                reuse=None):
+                 reuse=None):
     '''Point-wise feed forward net.
     
     Args:
-      inputs: A 3d tensor with shape of [N, C].
+      inputs: A 2d tensor with shape of [N, h].
       num_units: an integer, should be same as the same hyperparam in multihead_attention
       reuse: Boolean, whether to reuse the weights of a previous layer
         by the same name.
         
     Returns:
-      A 3d tensor with the same shape and dtype as inputs
+      A 2d tensor with the same shape and dtype as inputs
     '''
     with tf.variable_scope("multihead_attention", reuse=reuse):
         
+        input_dim = inputs.get_shape().as_list()[-1]
         
         # Inner layer
         outputs = fc(inputs, num_units)
         outputs = lrelu(outputs)
         
         # Readout layer
-        outputs = fc(outputs, num_units)
+        outputs = fc(outputs, input_dim)
         outputs = lrelu(outputs)
         
         # Residual connection
@@ -361,17 +393,16 @@ def transformer():
             
     def Disc(code, 
              n_blocks=3, 
-             num_units=100, 
-             num_heads=5,
+             num_units=10, 
+             num_heads=8,
              is_training=True,
              dropout_rate=0):
         
         with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
-            y = fc(code, num_units)
+            y = fc(code, num_heads)
             y = lrelu(y)
             for _ in range(n_blocks):
-                y = _multihead_attention(queries=y, 
-                                         keys=y, 
+                y = _multihead_attention(keys=y, 
                                          num_units=num_units, 
                                          num_heads=num_heads, 
                                          dropout_rate=dropout_rate,

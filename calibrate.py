@@ -35,19 +35,31 @@ if os.path.exists('./output'):
 parser = argparse.ArgumentParser()
 parser.add_argument('--use_test', dest='use_test', type=int, default=True, 
                     help="wether there are separate test data files")
-parser.add_argument('--n_epochs', dest='n_epochs', type=int, default=200, help="number of training epochs")
-parser.add_argument('--batch_size', dest='batch_size', type=int, default=64, help="minibatch size")
-parser.add_argument('--lr', dest='lr', type=float, default=1e-3, help='initial learning rate')
-parser.add_argument('--code_dim', dest='code_dim', type=int, default=15, help='dimension of code space')
-parser.add_argument('--beta', dest='beta', type=float, default=.1, help="KL coefficient")
-parser.add_argument('--gamma', dest='gamma', type=float, default=100, help="adversarial loss coefficient")
-parser.add_argument('--delta', dest='delta', type=float, default=.1, help="gp loss coefficient")
-parser.add_argument('--data_path', dest='data_path', default='./Data', help="path to data folder")
-parser.add_argument('--data_type', dest='data_type', default='other', help="type of data, cytof or other")
-parser.add_argument('--model', dest='model_name', default='resnet', help="model architecture, \
-                    either resnet of transformer")
+parser.add_argument('--n_epochs', dest='n_epochs', type=int, default=200, 
+                    help="number of training epochs")
+parser.add_argument('--batch_size', dest='batch_size', type=int, default=64, 
+                    help="minibatch size")
+parser.add_argument('--lr', dest='lr', type=float, default=1e-3, 
+                    help='initial learning rate')
+parser.add_argument('--code_dim', dest='code_dim', type=int, default=15, 
+                    help='dimension of code space')
+parser.add_argument('--beta', dest='beta', type=float, default=.1, 
+                    help="KL coefficient for VAE")
+parser.add_argument('--gamma', dest='gamma', type=float, default=100, 
+                    help="adversarial loss coefficient")
+parser.add_argument('--delta', dest='delta', type=float, default=.1, 
+                    help="gp loss coefficient")
+parser.add_argument('--data_path', dest='data_path', default='./Data', 
+                    help="path to data folder")
+parser.add_argument('--data_type', dest='data_type', default='cytof', 
+                    help="type of data, cytof or other")
+parser.add_argument('--model', dest='model_name', default='transformer', 
+                    help="model architecture, either resnet of transformer")
 parser.add_argument('--experiment_name', dest='experiment_name', 
                     default=datetime.datetime.now().strftime("%I:%M%p on %B %d, %Y"))
+parser.add_argument('--AE_type', dest='AE_type', default='VAE', 
+                    help="type of AE, either VAE or standard")
+
 
 args = parser.parse_args()
 
@@ -63,6 +75,7 @@ data_path = args.data_path
 data_type = args.data_type
 model_name = args.model_name
 experiment_name = args.experiment_name
+AE_type = args.AE_type
 
 pylib.mkdir('./output/%s' % experiment_name)
 with open('./output/%s/setting.txt' % experiment_name, 'w') as f:
@@ -91,33 +104,47 @@ Dec_b = partial(Dec_b, output_dim=input_dim)
 # =                                    graph                                   =
 # ==============================================================================
 
-def enc_dec(input, is_training=True):
+def enc_dec(input, AE_type, is_training=True):
     # encode
-    c_mu, c_log_sigma_sq = Enc(input, is_training=is_training)
+    if AE_type == "standard":
+        c, _ = Enc(input, is_training=is_training)
+    if AE_type == "VAE":
+        c_mu, c_log_sigma_sq = Enc(input, is_training=is_training)
 
-    # sample a code
-    epsilon = tf.random_normal(tf.shape(c_mu))
-    if is_training:
-        c = c_mu + tf.sqrt(tf.exp(c_log_sigma_sq)) * epsilon
-    else:
-        c = c_mu
+        # sample a code
+        epsilon = tf.random_normal(tf.shape(c_mu))
+        if is_training:
+            c = c_mu + tf.sqrt(tf.exp(c_log_sigma_sq)) * epsilon
+        else:
+            c = c_mu
 
     # reconstruct code
     rec_a = Dec_a(c, is_training=is_training)
     rec_b = Dec_b(c, is_training=is_training)
 
-    return c_mu, c_log_sigma_sq, c, rec_a, rec_b
+    if AE_type == "VAE":
+        return c_mu, c_log_sigma_sq, c, rec_a, rec_b
+    if AE_type == "standard":
+        return c, rec_a, rec_b
 
 # input
 input_a = tf.placeholder(tf.float32, [None, input_dim])
 input_b = tf.placeholder(tf.float32, [None, input_dim])
 
 # encode & decode
-c_mu_a, c_log_sigma_sq_a, c_a, rec_a, _ = enc_dec(input_a)
-c_mu_b, c_log_sigma_sq_b, c_b, _, rec_b = enc_dec(input_b)
+if AE_type == "VAE":
+    c_mu_a, c_log_sigma_sq_a, c_a, rec_a, _ = enc_dec(input_a, AE_type)
+    c_mu_b, c_log_sigma_sq_b, c_b, _, rec_b = enc_dec(input_b, AE_type)
+    
+    _, _, c_a1, rec_a1, _ = enc_dec(input_a, AE_type, is_training=False)
+    _, _, c_b1, _, rec_b1 = enc_dec(input_b, AE_type, is_training=False)
+    
+else:
+    c_a, rec_a, _ = enc_dec(input_a, AE_type)
+    c_b, _, rec_b = enc_dec(input_b, AE_type)
 
-_, _, c_a1, rec_a1, _ = enc_dec(input_a, is_training=False)
-_, _, c_b1, _, rec_b1 = enc_dec(input_b, is_training=False)
+    c_a1, rec_a1, _ = enc_dec(input_a, AE_type, is_training=False)
+    c_b1, _, rec_b1 = enc_dec(input_b, AE_type, is_training=False)
 
 Disc_a = Disc(c_a)
 Disc_b = Disc(c_b)
@@ -128,9 +155,14 @@ rec_loss_a = tf.losses.mean_squared_error(input_a, rec_a)
 rec_loss_b = tf.losses.mean_squared_error(input_b, rec_b)
 rec_loss = rec_loss_a + rec_loss_b
 
-kld_loss_a = -tf.reduce_mean(0.5 * (1 + c_log_sigma_sq_a - c_mu_a**2 - tf.exp(c_log_sigma_sq_a)))
-kld_loss_b = -tf.reduce_mean(0.5 * (1 + c_log_sigma_sq_b - c_mu_b**2 - tf.exp(c_log_sigma_sq_a)))
-kld_loss = kld_loss_a + kld_loss_b
+if AE_type == "VAE":
+    kld_loss_a = -tf.reduce_mean(0.5 * (1 + c_log_sigma_sq_a - c_mu_a**2 - tf.exp(c_log_sigma_sq_a)))
+    kld_loss_b = -tf.reduce_mean(0.5 * (1 + c_log_sigma_sq_b - c_mu_b**2 - tf.exp(c_log_sigma_sq_b)))
+    kld_loss = kld_loss_a + kld_loss_b
+else:
+    kld_loss_a = tf.constant(0.)
+    kld_loss_b = tf.constant(0.)
+    kld_loss = tf.constant(0.)
 
 adv_loss =  tf.losses.mean_squared_error(tf.reduce_mean(Disc_a), tf.reduce_mean(Disc_b))
 
