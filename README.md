@@ -1,6 +1,6 @@
 
 
-Repository for the paper "???" by Uri Shaham.
+Repository for the paper "Generalizable Batch Effect Removal via Batch-Free Encoding" by Uri Shaham.
 
 Data:
 * Data files should appear in a data folder specified in data_path.
@@ -19,18 +19,18 @@ Training:
 Usage examples:
 
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "mlp" \
---n_epochs 500 --AE_type "VAE" --code_dim 15 --beta .5 --gamma 100. --delta .1 \
---data_path './Data'  --experiment_name c15_beta.5_gamma100.0_delta.1_cytof_mlp
+--n_epochs 500 --AE_type "VAE" --code_dim 15 --beta .5 --gamma 2. --delta .1 \
+--data_path './Data'  --experiment_name c15_beta.5_gamma1.0_delta.1_cytof_mlp
 
 
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "resnet"\
- --n_epochs 200 --AE_type "VAE" --code_dim 15 --beta 0.1 --gamma 100. --delta .1 \
- --data_path './Data' --experiment_name c15_beta0.1_gamma100.0_delta.1_cytof_resnet
+ --n_epochs 200 --AE_type "VAE" --code_dim 15 --beta 0.5 --gamma 2. --delta .1 \
+ --data_path './Data' --experiment_name c15_beta0.5_gamma1.0_delta.1_cytof_resnet
 
-CUDA_VISIBLE_DEVICES=0 python calibrate.py --n_epochs 500 --data_type "other" \
---data_path './Data/scRNA-seq' --use_test False --model "mlp" --code_dim 15 \
---beta 1. --gamma 100. --delta .1 \
---experiment_name c15_beta1.0_gamma100.0_delta.1_scRNA-seq_mlp
+CUDA_VISIBLE_DEVICES=0 python calibrate.py --n_epochs 200 --data_type "other" \
+--data_path './Data/scRNA-seq' --use_test False --model "mlp" --code_dim 20 \
+--beta .1 --gamma .5 --delta .1 \
+--experiment_name c20_beta.25_gamma1.0_delta.5_scRNA-seq_mlp
 
 
 
