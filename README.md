@@ -20,12 +20,12 @@ Usage examples:
 
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "mlp" \
 --n_epochs 500 --AE_type "VAE" --code_dim 15 --beta .5 --gamma 2. --delta .1 \
---data_path './Data'  --experiment_name c15_beta.5_gamma1.0_delta.1_cytof_mlp
+--data_path './Data'  --experiment_name c15_beta.5_gamma2.0_delta.1_cytof_mlp
 
 
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "resnet"\
  --n_epochs 200 --AE_type "VAE" --code_dim 15 --beta 0.5 --gamma 2. --delta .1 \
- --data_path './Data' --experiment_name c15_beta0.5_gamma1.0_delta.1_cytof_resnet
+ --data_path './Data' --experiment_name c15_beta0.5_gamma2.0_delta.1_cytof_resnet
 
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --n_epochs 200 --data_type "other" \
 --data_path './Data/scRNA-seq' --use_test False --model "mlp" --code_dim 20 \
