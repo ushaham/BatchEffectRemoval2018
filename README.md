@@ -1,6 +1,6 @@
 
 
-Repository for the paper "Generalizable Batch Effect Removal via Batch-Free Encoding" by Uri Shaham.
+Repository for the paper "Batch Effect Removal via Batch-Free Encoding" by Uri Shaham.
 
 Data:
 * Data files should appear in a data folder specified in data_path.
