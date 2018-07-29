@@ -16,16 +16,11 @@ Training:
 * For visualization and evaluation purposes, we also save the data in output/calibrated data. Note that this data is not in its original scale - it is processed using log transformation and z-scoring.
 
 
-Usage examples:
+The following usage examples were used to obtain the results reported on the manuscript:
 
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "mlp" \
---n_epochs 1000 --AE_type "VAE" --code_dim 15 --beta .1 --gamma 5. --delta .05 \
---data_path './Data'  --experiment_name c15_beta.1_gamma5.0_delta.05_cytof_mlp
-
-
-CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "resnet"\
- --n_epochs 200 --AE_type "VAE" --code_dim 15 --beta 0.5 --gamma 2. --delta .1 \
- --data_path './Data' --experiment_name c15_beta0.5_gamma2.0_delta.1_cytof_resnet
+--n_epochs 1000 --AE_type "VAE" --code_dim 15 --beta .2 --gamma 10. --delta .1 \
+--data_path './Data'  --experiment_name c15_beta.2_gamma10.0_delta.1_cytof_mlp
 
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --n_epochs 200 --data_type "other" \
 --data_path './Data/scRNA-seq' --use_test False --model "mlp" --code_dim 20 \
