@@ -24,8 +24,8 @@ CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "mlp" \
 
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --n_epochs 500 --data_type "other" \
 --data_path './Data/scRNA-seq' --use_test False --model "mlp" --code_dim 20 \
---beta .02 --gamma .5 --delta .02 \
---experiment_name c20_beta.02_gamma.5_delta.02_scRNA-seq_mlp
+--beta .02 --gamma .4 --delta .02 \
+--experiment_name c20_beta.02_gamma.4_delta.02_scRNA-seq_mlp
 
 
 
