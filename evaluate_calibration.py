@@ -22,10 +22,10 @@ import pylib
 # ==============================================================================
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--use_test', dest='use_test', type=int, default=True, 
+parser.add_argument('--use_test', dest='use_test', type=int, default=False, 
                     help="wether there are separate test data files")
 parser.add_argument('--data_path', dest='data_path', default='./Data', help="path to data folder")
-parser.add_argument('--data_type', dest='data_type', default='cytof', help="type of data")
+parser.add_argument('--data_type', dest='data_type', default='other', help="type of data")
 
    
 args = parser.parse_args()
@@ -200,28 +200,25 @@ for i in range(np.min([3,target.shape[1]])):
     at_ecdf = after_t_ecdf(x)
     as_ecdf = after_s_ecdf(x)   
     fig = plt.figure()
-    a1 = fig.add_subplot(111)
-    #a1.plot(bt_ecdf, '-', color = 'black') 
-    #a1.plot(bs_ecdf, '--', color = 'black')   
+    a1 = fig.add_subplot(111)  
     a1.plot(bt_ecdf, color = 'blue') 
     a1.plot(bs_ecdf, color = 'red') 
     a1.set_xticklabels([])
     plt.legend(['target before cal.', 'source before cal.'], loc=0 ,prop={'size':16})
-    plt.title(marker_names[i])
+    if data_type == "cytof":
+        plt.title(marker_names[i])
+        fig.savefig(plots_dir+'/'+marker_names[i]+'before_cal.png')
     plt.show(block=False) 
-    fig.savefig(plots_dir+'/'+marker_names[i]+'before_cal.png')
     fig = plt.figure()
     a2 = fig.add_subplot(111)
-    #a2.plot(at_ecdf, '-', color = 'black') 
-    #a2.plot(as_ecdf, '--', color = 'black') 
     a2.plot(at_ecdf, color = 'blue') 
     a2.plot(as_ecdf, color = 'red') 
     a2.set_xticklabels([])
     plt.legend(['target after cal.', 'source after cal.'], loc=0 ,prop={'size':16})
     if data_type == "cytof":
         plt.title(marker_names[i])
+        fig.savefig(plots_dir+'/'+marker_names[i]+'after_cal.png')
     plt.show(block=False)
-    fig.savefig(plots_dir+'/'+marker_names[i]+'after_cal.png')
     
 input("Press Enter to view correlations")   
 plt.close("all")
@@ -325,21 +322,24 @@ print('MMD target-target after calibration: %.2f pm %.2f'%(np.mean(mmd_target_ta
 
 # MMD in code space
 mmd_source_target_train = np.zeros(3)
-mmd_source_target_test = np.zeros(3)
 mmd_source_source_train = np.zeros(3)
 mmd_target_target_train = np.zeros(3)
+if use_test:
+    mmd_source_target_test = np.zeros(3)
 
 for i in range(3):
     source_train_inds = np.random.randint(low=0, high = source_train_code.shape[0], size = num_pts)
     source_train_inds1 = np.random.randint(low=0, high = source_train_code.shape[0], size = num_pts)
-    source_test_inds = np.random.randint(low=0, high = source_test_code.shape[0], size = num_pts)
     target_train_inds = np.random.randint(low=0, high = target_train_code.shape[0], size = num_pts)
     target_train_inds1 = np.random.randint(low=0, high = target_train_code.shape[0], size = num_pts)
-    target_test_inds = np.random.randint(low=0, high = target_test_code.shape[0], size = num_pts)
+    
     mmd_source_target_train[i] = K.eval(utils.MMD(source_train_code,target_train_code).cost(K.variable(value=source_train_code[source_train_inds]), 
               K.variable(value=target_train_code[target_train_inds])))
-    mmd_source_target_test[i] = K.eval(utils.MMD(source_test_code,target_test_code).cost(K.variable(value=source_test_code[source_test_inds]), 
-              K.variable(value=target_test_code[target_test_inds])))
+    if use_test:
+        source_test_inds = np.random.randint(low=0, high = source_test_code.shape[0], size = num_pts)
+        target_test_inds = np.random.randint(low=0, high = target_test_code.shape[0], size = num_pts)
+        mmd_source_target_test[i] = K.eval(utils.MMD(source_test_code,target_test_code).cost(K.variable(value=source_test_code[source_test_inds]), 
+                  K.variable(value=target_test_code[target_test_inds])))
     mmd_source_source_train[i] = K.eval(utils.MMD(source_train_code,source_train_code).cost(K.variable(value=source_train_code[source_train_inds]), 
               K.variable(value=source_train_code[source_train_inds1])))
     mmd_target_target_train[i] = K.eval(utils.MMD(target_train_code,target_train_code).cost(K.variable(value=target_train_code[target_train_inds]), 
@@ -347,8 +347,9 @@ for i in range(3):
 
 print('MMD source-target_train in code space after calibration: %.2f pm %.2f'%(np.mean(mmd_source_target_train),
                                                                          np.std(mmd_source_target_train)))
-print('MMD source-target_test in code space after calibration: %.2f pm %.2f'%(np.mean(mmd_source_target_test),
-                                                                         np.std(mmd_source_target_test)))
+if use_test:
+    print('MMD source-target_test in code space after calibration: %.2f pm %.2f'%(np.mean(mmd_source_target_test),
+                                                                                  np.std(mmd_source_target_test)))
 print('MMD source-source_train in code space after calibration: %.2f pm %.2f'%(np.mean(mmd_source_source_train),
                                                                          np.std(mmd_source_source_train)))
 print('MMD target-target_train in code space after calibration: %.2f pm %.2f'%(np.mean(mmd_target_target_train),
