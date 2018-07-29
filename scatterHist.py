@@ -61,8 +61,8 @@ def scatterHist(x1,x2, y1,y2, axis1='', axis2='', title='', name1='', name2='',
     axScatter.set_xlabel(axis1, fontsize=15)
     axScatter.set_ylabel(axis2, fontsize=15)
     
-    axHistx.set_title(title)
-    axScatter.legend([name1, name2])
+    axHistx.set_title(title, fontsize=15)
+    axScatter.legend([name1, name2], fontsize=15)
     plt.show(block=False)
     if not plots_dir=='':
         fig.savefig(plots_dir+'/'+title+'.png')
