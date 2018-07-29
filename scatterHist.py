@@ -8,7 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import NullFormatter
 
-def scatterHist(x1,x2, y1,y2, axis1='', axis2='', title='', name1='', name2=''):
+def scatterHist(x1,x2, y1,y2, axis1='', axis2='', title='', name1='', name2='',
+                plots_dir=''):
     nullfmt = NullFormatter()         # no labels
     
     # definitions for the axes
@@ -21,7 +22,7 @@ def scatterHist(x1,x2, y1,y2, axis1='', axis2='', title='', name1='', name2=''):
     rect_histy = [left_h, bottom, 0.2, height]
     
     # start with a rectangular Figure
-    plt.figure(figsize=(8, 8))
+    fig = plt.figure(figsize=(8, 8))
        
     axScatter = plt.axes(rect_scatter)
     axHistx = plt.axes(rect_histx)
@@ -63,3 +64,5 @@ def scatterHist(x1,x2, y1,y2, axis1='', axis2='', title='', name1='', name2=''):
     axHistx.set_title(title)
     axScatter.legend([name1, name2])
     plt.show(block=False)
+    if not plots_dir=='':
+        fig.savefig(plots_dir+'/'+title+'.png')

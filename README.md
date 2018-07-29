@@ -19,8 +19,8 @@ Training:
 Usage examples:
 
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "mlp" \
---n_epochs 500 --AE_type "VAE" --code_dim 15 --beta .5 --gamma 2. --delta .1 \
---data_path './Data'  --experiment_name c15_beta.5_gamma2.0_delta.1_cytof_mlp
+--n_epochs 1000 --AE_type "VAE" --code_dim 15 --beta .25 --gamma 2. --delta .05 \
+--data_path './Data'  --experiment_name c15_beta.25_gamma2.0_delta.05_cytof_mlp
 
 
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "resnet"\

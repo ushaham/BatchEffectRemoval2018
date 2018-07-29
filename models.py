@@ -29,6 +29,8 @@ def mlp():
         with tf.variable_scope('Encoder', reuse=tf.AUTO_REUSE):
             y = fc(inputs, hidden_dim)
             y = lrelu(y)
+            y = fc(y, hidden_dim)
+            y = lrelu(y)
             c_mu = fc(y, code_dim)
             c_log_sigma_sq = fc(y, code_dim)
         return c_mu, c_log_sigma_sq
@@ -41,6 +43,8 @@ def mlp():
         with tf.variable_scope('Decoder_a', reuse=tf.AUTO_REUSE):
             y = fc(code, hidden_dim)
             y = lrelu(y)
+            y = fc(y, hidden_dim)
+            y = lrelu(y)
             recon = fc(y, output_dim)
         return recon
     
@@ -52,6 +56,8 @@ def mlp():
         with tf.variable_scope('Decoder_b', reuse=tf.AUTO_REUSE):
             y = fc(code, hidden_dim)
             y = lrelu(y)
+            y = fc(y, hidden_dim)
+            y = lrelu(y)
             recon = fc(y, output_dim)
         return recon
             
@@ -60,6 +66,8 @@ def mlp():
         
         with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE):
             y = fc(code, hidden_dim)
+            y = lrelu(y)
+            y = fc(y, hidden_dim)
             y = lrelu(y)
             output = fc(y, 1)
         return output    

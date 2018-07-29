@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import keras.backend as K
 import scatterHist as sh
 import utils
+import pylib
 
 
 
@@ -40,6 +41,8 @@ data_type = args.data_type
 experiment_name = [x[0] for x in os.walk('./output')]
 experiment_name = experiment_name[1].split('/')[2]
 calibrated_data_dir = './output/%s/calibrated_data' % experiment_name
+plots_dir = './output/%s/plots' % experiment_name
+pylib.mkdir(plots_dir)
 
 source_train_data = np.loadtxt(calibrated_data_dir+'/source_train_data.csv', delimiter=',')
 target_train_data = np.loadtxt(calibrated_data_dir+'/target_train_data.csv', delimiter=',')
@@ -69,6 +72,7 @@ if use_test:
 
 input("Data loaded, press Enter to view reconstructions")
 plt.close("all")
+
 # ==============================================================================
 # =         visualize calibration and reconstruction in PC subspace            =
 # ==============================================================================
@@ -98,25 +102,25 @@ sh.scatterHist(target_train_data_pca[:,pc1], target_train_data_pca[:,pc2],
                reconstructed_target_train_data_pca[:,pc1], 
                reconstructed_target_train_data_pca[:,pc2], 
                axis1, axis2, title="target train data reconstruction", 
-               name1='true', name2='recon')
+               name1='true', name2='recon', plots_dir = plots_dir)
   
 sh.scatterHist(source_train_data_pca[:,pc1], source_train_data_pca[:,pc2], 
                reconstructed_source_train_data_pca[:,pc1], 
                reconstructed_source_train_data_pca[:,pc2], 
                axis1, axis2, title="source train data reconstruction", 
-               name1='true', name2='recon')
+               name1='true', name2='recon', plots_dir = plots_dir)
 if use_test:   
     sh.scatterHist(target_test_data_pca[:,pc1], target_test_data_pca[:,pc2], 
                reconstructed_target_test_data_pca[:,pc1], 
                reconstructed_target_test_data_pca[:,pc2], 
                axis1, axis2, title="target test data reconstruction", 
-               name1='true', name2='recon')
+               name1='true', name2='recon', plots_dir = plots_dir)
    
     sh.scatterHist(source_test_data_pca[:,pc1], source_test_data_pca[:,pc2], 
                reconstructed_source_test_data_pca[:,pc1], 
                reconstructed_source_test_data_pca[:,pc2], 
                axis1, axis2, title="source test data reconstruction", 
-               name1='true', name2='recon')
+               name1='true', name2='recon', plots_dir = plots_dir)
 
 input("Press Enter to view calibration")
 plt.close("all")
@@ -128,27 +132,27 @@ sh.scatterHist(target_train_data_pca[:,pc1], target_train_data_pca[:,pc2],
                source_train_data_pca[:,pc1], 
                source_train_data_pca[:,pc2], 
                axis1, axis2, title="train data before calibration", 
-               name1='target', name2='source')
+               name1='target', name2='source', plots_dir = plots_dir)
 
 sh.scatterHist(reconstructed_target_train_data_pca[:,pc1], 
                reconstructed_target_train_data_pca[:,pc2], 
                calibrated_source_train_data_pca[:,pc1], 
                calibrated_source_train_data_pca[:,pc2], 
                axis1, axis2, title="train data after calibration", 
-               name1='target', name2='source')
+               name1='target', name2='source', plots_dir = plots_dir)
 if use_test:
     sh.scatterHist(target_test_data_pca[:,pc1], target_test_data_pca[:,pc2], 
                source_test_data_pca[:,pc1], 
                source_test_data_pca[:,pc2], 
                axis1, axis2, title="test data before calibration", 
-               name1='target', name2='source')
+               name1='target', name2='source', plots_dir = plots_dir)
 
     sh.scatterHist(reconstructed_target_test_data_pca[:,pc1], 
                reconstructed_target_test_data_pca[:,pc2], 
                calibrated_source_test_data_pca[:,pc1], 
                calibrated_source_test_data_pca[:,pc2], 
                axis1, axis2, title="test data after calibration", 
-               name1='target', name2='source')
+               name1='target', name2='source', plots_dir = plots_dir)
 
 input("Press Enter to view per-marker calibration")
 plt.close("all")
@@ -205,6 +209,7 @@ for i in range(np.min([3,target.shape[1]])):
     plt.legend(['target before cal.', 'source before cal.'], loc=0 ,prop={'size':16})
     plt.title(marker_names[i])
     plt.show(block=False) 
+    fig.savefig(plots_dir+'/'+marker_names[i]+'before_cal.png')
     fig = plt.figure()
     a2 = fig.add_subplot(111)
     #a2.plot(at_ecdf, '-', color = 'black') 
@@ -215,7 +220,8 @@ for i in range(np.min([3,target.shape[1]])):
     plt.legend(['target after cal.', 'source after cal.'], loc=0 ,prop={'size':16})
     if data_type == "cytof":
         plt.title(marker_names[i])
-    plt.show(block=False) 
+    plt.show(block=False)
+    fig.savefig(plots_dir+'/'+marker_names[i]+'after_cal.png')
     
 input("Press Enter to view correlations")   
 plt.close("all")
@@ -267,6 +273,7 @@ plt.legend(['before calib.', 'after calib.'], loc=2)
 plt.yticks([])
 plt.title('magnitude of difference of correlation coefficients')
 plt.show(block=False)
+fig.savefig(plots_dir+'/correl.png')
 
 input("Press Enter to view MMD analysis") 
 plt.close("all")
@@ -387,11 +394,11 @@ if data_type=='cytof':
         # before calibration
         sh.scatterHist(target_sub_pop[:,marker1], target_sub_pop[:,marker2], source_sub_pop[:,marker1], 
                        source_sub_pop[:,marker2], axis1, axis2, title="data in CD28-GzB plane before calibration", 
-                       name1='target', name2='source')
+                       name1='target', name2='source', plots_dir = plots_dir)
         # after calibration 
         sh.scatterHist(rec_target_sub_pop[:,marker1], rec_target_sub_pop[:,marker2], cal_source_sub_pop[:,marker1], 
                        cal_source_sub_pop[:,marker2], axis1, axis2, title="data in CD28-GzB plane after calibration", 
-                       name1='target', name2='source')
+                       name1='target', name2='source', plots_dir = plots_dir)
 
 
 input("Press Enter to exit")     
