@@ -271,12 +271,13 @@ fig = plt.figure()
 plt.hist(f[:,:2], bins = 10, normed=True, histtype='bar')
 plt.legend(['before calib.', 'after calib.'], loc=2)
 plt.yticks([])
-plt.title('magnitude of difference of correlation coefficients')
+plt.title('difference of correlation coefficients')
 plt.show(block=False)
 fig.savefig(plots_dir+'/correl.png')
 
 input("Press Enter to view MMD analysis") 
 plt.close("all")
+
 # ==============================================================================
 # =                                      MMD                                   =
 # ==============================================================================
@@ -355,6 +356,7 @@ print('MMD target-target_train in code space after calibration: %.2f pm %.2f'%(n
 
 input("Press Enter to view CD-8 analysis (for cytof data)") 
 plt.close("all")    
+
 # ==============================================================================
 # =                              CD8 sub-population                            =
 # ==============================================================================
