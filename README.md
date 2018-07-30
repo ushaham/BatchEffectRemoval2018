@@ -29,8 +29,8 @@ CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "mlp" \
 ''' calibration of scRNA-seq data '''
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --n_epochs 500 --data_type "other" \
 --data_path './Data/scRNA-seq' --model "mlp" --code_dim 20 \
---beta .02 --gamma .4 --delta .02 \
---experiment_name c20_beta.02_gamma.4_delta.02_scRNA-seq_mlp
+--beta .01 --gamma .4 --delta .02 \
+--experiment_name c20_beta.01_gamma.4_delta.02_scRNA-seq_mlp
 
 
 ''' after running calibration of cytof data '''
@@ -39,10 +39,15 @@ python evaluate_calibration.py --use_test --data_type "cytof"
 ''' after running calibration of scRNA-seq data '''
 python evaluate_calibration.py --data_type "other" 
 
+''' TSNE embedding of scRNA-seq data '''
+python tsne.py 
 
-# Important remark:
-it is important to tune the hyperparameters specified in calibrate.py to get a satisfying result.
-In particular, the parameters beta,gamma and delta need to be tuned carefully.
+
+# Hyperparameter tuning
+it is very important to tune the hyperparameters specified in calibrate.py to get a satisfying result.
+In particular, the parameters beta,gamma and delta, which balance between all 
+components of the loss need to be tuned carefully, for each dataset.
+They are currently tuned by the author for the available datasets.
 To help the user do that, it is highly recommended to:
 (i) use evaluate_calibration.py, and verify that the reconstructions and 
 calibrations are both of high quality

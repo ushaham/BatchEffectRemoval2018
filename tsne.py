@@ -58,3 +58,5 @@ plt.legend(['batch 1', 'batch 2'], fontsize=15)
 plt.show
 fig.savefig(plots_dir+'/tsne_embedding_after_calib.png')
 
+input("Press Enter to exit")
+plt.close("all")
