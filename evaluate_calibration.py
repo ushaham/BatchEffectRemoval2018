@@ -22,10 +22,10 @@ import pylib
 # ==============================================================================
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--use_test', dest='use_test', type=int, default=False, 
+parser.add_argument('--use_test', dest='use_test', type=int, default=True, 
                     help="wether there are separate test data files")
 parser.add_argument('--data_path', dest='data_path', default='./Data', help="path to data folder")
-parser.add_argument('--data_type', dest='data_type', default='other', help="type of data")
+parser.add_argument('--data_type', dest='data_type', default='cytof', help="type of data")
 
    
 args = parser.parse_args()

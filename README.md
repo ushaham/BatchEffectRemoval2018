@@ -18,10 +18,12 @@ Training:
 
 The following usage examples were used to obtain the results reported on the manuscript:
 
+# calibration of cytof data
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "mlp" \
 --n_epochs 1000 --AE_type "VAE" --code_dim 15 --beta .2 --gamma 10. --delta .1 \
 --data_path './Data'  --experiment_name c15_beta.2_gamma10.0_delta.1_cytof_mlp
 
+# calibration of scRNA-seq data
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --n_epochs 500 --data_type "other" \
 --data_path './Data/scRNA-seq' --use_test False --model "mlp" --code_dim 20 \
 --beta .02 --gamma .4 --delta .02 \
@@ -31,8 +33,22 @@ CUDA_VISIBLE_DEVICES=0 python calibrate.py --n_epochs 500 --data_type "other" \
 
 In addition, we provide an evaluation script that examins the reconstruction errors, plots the calibrated data, examines correlation coefficients and calculated MMD estimates.
 
-Usage example:
-python evaluate_calibration.py
+Usage examples:
+
+# after running calibration of cytof data
+python evaluate_calibration.py --use_test True data_type "cytof" 
+
+# after running calibration of scRNA-seq data
+python evaluate_calibration.py --use_test False data_type "other" 
+
+
+Important remark:
+it is important to tune the hyperparameters specified in calibrate.py to get a satisfying result.
+In particular, the parameters beta,gamma and delta need to be tuned carefully.
+To help the user do that, it is highly recommended to:
+(i) use evaluate_calibration.py, and verify that the reconstructions and 
+calibrations are both of high quality
+(ii) look at the tensorboard plots for each run.
 
 
 

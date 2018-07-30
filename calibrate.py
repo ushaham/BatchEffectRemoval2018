@@ -340,7 +340,7 @@ s_cal_train = utils.recover_org_scale(s_cal_train, data_type, preprocessor)
 np.savetxt(fname=save_dir+'/source_train_data.csv', X=source_train_data, delimiter=',')
 np.savetxt(fname=save_dir+'/target_train_data.csv', X=target_train_data, delimiter=',')
 np.savetxt(fname=save_dir+'/calibrated_source_train_data.csv', X=s_cal_train, delimiter=',')
-np.savetxt(fname=save_dir+'/caalibrated_source_train_data.csv', X=t_rec_train, delimiter=',')
+np.savetxt(fname=save_dir+'/calibrated_target_train_data.csv', X=t_rec_train, delimiter=',')
 if use_test:
     target_test_data = utils.recover_org_scale(target_test_data, data_type, preprocessor)
     source_test_data = utils.recover_org_scale(source_test_data, data_type, preprocessor)
@@ -349,7 +349,7 @@ if use_test:
     np.savetxt(fname=save_dir+'/source_test_data.csv', X=source_train_data, delimiter=',')
     np.savetxt(fname=save_dir+'/target_test_data.csv', X=target_train_data, delimiter=',')
     np.savetxt(fname=save_dir+'/calibrated_source_test_data.csv', X=s_cal_train, delimiter=',')
-    np.savetxt(fname=save_dir+'/calibrated_source_test_data.csv', X=t_rec_train, delimiter=',')
+    np.savetxt(fname=save_dir+'/calibrated_starget_test_data.csv', X=t_rec_train, delimiter=',')
 
 print ('Data saved successfully')
 input("Press Enter to exit")     
