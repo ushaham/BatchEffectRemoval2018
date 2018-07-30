@@ -36,10 +36,10 @@ In addition, we provide an evaluation script that examins the reconstruction err
 Usage examples:
 
 # after running calibration of cytof data
-python evaluate_calibration.py --use_test True data_type "cytof" 
+python evaluate_calibration.py --use_test True --data_type "cytof" 
 
 # after running calibration of scRNA-seq data
-python evaluate_calibration.py --use_test False data_type "other" 
+python evaluate_calibration.py --use_test False --data_type "other" 
 
 
 Important remark:
