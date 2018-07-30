@@ -33,7 +33,7 @@ if os.path.exists('./output'):
     shutil.rmtree('./output')
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--use_test', dest='use_test', type=bool, default=True, 
+parser.add_argument('--use_test', dest='use_test', action='store_true', default=False, 
                     help="wether there are separate test data files")
 parser.add_argument('--n_epochs', dest='n_epochs', type=int, default=1000, 
                     help="number of training epochs")
@@ -63,7 +63,7 @@ parser.add_argument('--experiment_name', dest='experiment_name',
 
 
 args = parser.parse_args()
-
+print(args)
 use_test = args.use_test
 n_epochs = args.n_epochs
 batch_size = args.batch_size

@@ -22,17 +22,19 @@ import pylib
 # ==============================================================================
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--use_test', dest='use_test', type=bool, default=True, 
+parser.add_argument('--use_test', dest='use_test', action='store_true', default=False, 
                     help="wether there are separate test data files")
-parser.add_argument('--data_path', dest='data_path', default='./Data', help="path to data folder")
-parser.add_argument('--data_type', dest='data_type', default='cytof', help="type of data")
+parser.add_argument('--data_path', dest='data_path', default='./Data', 
+                    help="path to data folder")
+parser.add_argument('--data_type', dest='data_type', default='cytof', 
+                    help="type of data, either cytof or other")
 
    
 args = parser.parse_args()
+print(args)
 use_test = args.use_test
 data_path = args.data_path
 data_type = args.data_type
-
 
 # ==============================================================================
 # =                                 load data                                  =
@@ -355,7 +357,8 @@ print('MMD source-source_train in code space after calibration: %.2f pm %.2f'%(n
 print('MMD target-target_train in code space after calibration: %.2f pm %.2f'%(np.mean(mmd_target_target_train),
                                                                          np.std(mmd_target_target_train)))
 
-input("Press Enter to view CD-8 analysis (for cytof data)") 
+if data_type == 'cytof':
+    input("Press Enter to view CD-8 analysis (for cytof data)") 
 plt.close("all")    
 
 # ==============================================================================

@@ -23,20 +23,21 @@ The following usage examples were used to obtain the results reported on the man
 ''' calibration of cytof data '''
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "mlp" \
 --n_epochs 1000 --AE_type "VAE" --code_dim 15 --beta .2 --gamma 10. --delta .1 \
---data_path './Data'  --experiment_name c15_beta.2_gamma10.0_delta.1_cytof_mlp
+--data_path './Data'  --use_test \
+--experiment_name c15_beta.2_gamma10.0_delta.1_cytof_mlp
 
 ''' calibration of scRNA-seq data '''
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --n_epochs 500 --data_type "other" \
---data_path './Data/scRNA-seq' --use_test False --model "mlp" --code_dim 20 \
+--data_path './Data/scRNA-seq' --model "mlp" --code_dim 20 \
 --beta .02 --gamma .4 --delta .02 \
 --experiment_name c20_beta.02_gamma.4_delta.02_scRNA-seq_mlp
 
 
 ''' after running calibration of cytof data '''
-python evaluate_calibration.py --use_test True --data_type "cytof" 
+python evaluate_calibration.py --use_test --data_type "cytof" 
 
 ''' after running calibration of scRNA-seq data '''
-python evaluate_calibration.py --use_test False --data_type "other" 
+python evaluate_calibration.py --data_type "other" 
 
 
 # Important remark:
