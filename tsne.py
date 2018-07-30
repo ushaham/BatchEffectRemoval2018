@@ -13,6 +13,8 @@ import numpy as np
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import pylib
+import scatterHist as sh
+
 
 
 
@@ -57,6 +59,20 @@ plt.title('TSNE embedding after calibration', fontsize=15)
 plt.legend(['batch 1', 'batch 2'], fontsize=15)
 plt.show
 fig.savefig(plots_dir+'/tsne_embedding_after_calib.png')
+
+sh.scatterHist(embedding_before[:n_s,0], embedding_before[:n_s,1], 
+               embedding_before[n_s:,0], 
+               embedding_before[n_s:,1], 
+               axis1='', axis2='', title='TSNE embedding before calibration', 
+               name1='batch 1', name2='batch 2', plots_dir = plots_dir)
+
+sh.scatterHist(embedding_after[:n_s,0], embedding_after[:n_s,1], 
+               embedding_after[n_s:,0], 
+               embedding_after[n_s:,1], 
+               axis1='', axis2='', title='TSNE embedding after calibration', 
+               name1='batch 1', name2='batch 2', plots_dir = plots_dir)
+
+
 
 input("Press Enter to exit")
 plt.close("all")
