@@ -44,22 +44,6 @@ embedding_before = TSNE(n_components=2).fit_transform(before_calib)
 embedding_after = TSNE(n_components=2).fit_transform(after_calib)
 
 # visualize
-fig = plt.figure(figsize=(8, 8))
-plt.scatter(embedding_before[:n_s,0], embedding_before[:n_s,1], color = 'blue', s=3)
-plt.scatter(embedding_before[n_s:,0], embedding_before[n_s:,1], color = 'red', s=3)
-plt.title('TSNE embedding before calibration', fontsize=15)
-plt.legend(['batch 1', 'batch 2'], fontsize=15)
-plt.show
-fig.savefig(plots_dir+'/tsne_embedding_before_calib.png')
-
-fig = plt.figure(figsize=(8, 8))
-plt.scatter(embedding_after[:n_s,0], embedding_after[:n_s,1], color = 'blue', s=3)
-plt.scatter(embedding_after[n_s:,0], embedding_after[n_s:,1], color = 'red', s=3)
-plt.title('TSNE embedding after calibration', fontsize=15)
-plt.legend(['batch 1', 'batch 2'], fontsize=15)
-plt.show
-fig.savefig(plots_dir+'/tsne_embedding_after_calib.png')
-
 sh.scatterHist(embedding_before[:n_s,0], embedding_before[:n_s,1], 
                embedding_before[n_s:,0], 
                embedding_before[n_s:,1], 
