@@ -44,7 +44,7 @@ python tsne.py
 
 
 # Hyperparameter tuning
-it is very important to tune the hyperparameters specified in calibrate.py to get a satisfying result.
+It is very important to tune the hyperparameters specified in calibrate.py to get a satisfying result.
 In particular, the parameters beta,gamma and delta, which balance between all 
 components of the loss need to be tuned carefully, for each dataset.
 They are currently tuned by the author for the available datasets.
