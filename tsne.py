@@ -40,8 +40,8 @@ after_calib = np.concatenate([calibrated_source_train_data,
                               reconstructed_target_train_data], axis=0)
 
 # embed data
-embedding_before = TSNE(n_components=2).fit_transform(before_calib)
-embedding_after = TSNE(n_components=2).fit_transform(after_calib)
+embedding_before = TSNE(n_components=2, n_iter=1200).fit_transform(before_calib)
+embedding_after = TSNE(n_components=2, n_iter=1200).fit_transform(after_calib)
 
 # visualize
 sh.scatterHist(embedding_before[:n_s,0], embedding_before[:n_s,1], 
