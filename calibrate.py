@@ -39,6 +39,10 @@ parser.add_argument('--n_epochs', dest='n_epochs', type=int, default=1000,
                     help="number of training epochs")
 parser.add_argument('--batch_size', dest='batch_size', type=int, default=64, 
                     help="minibatch size")
+parser.add_argument('--decay_rate', dest='decay_rate', type=float, default=.1, 
+                    help='learning rate decay rate')
+parser.add_argument('--decay_epochs', dest='decay_epochs', type=float, default=400, 
+                    help='epochs till lr decay')
 parser.add_argument('--lr', dest='lr', type=float, default=1e-3, 
                     help='initial learning rate')
 parser.add_argument('--code_dim', dest='code_dim', type=int, default=15, 
@@ -68,6 +72,8 @@ use_test = args.use_test
 n_epochs = args.n_epochs
 batch_size = args.batch_size
 lr = args.lr
+decay_rate = args.decay_rate
+decay_epochs = args.decay_epochs
 code_dim = args.code_dim
 beta = args.beta
 gamma = args.gamma
@@ -181,9 +187,25 @@ D_loss = wd_loss + gp_loss * delta
 d_vars = utils.trainable_variables('discriminator')
 g_vars = utils.trainable_variables(['Encoder', 'Decoder_a', 'Decoder_b'])
 
+# LR decay policy
+iters_per_epoch = int(min_n/batch_size)
+decay_steps = iters_per_epoch * decay_epochs
 
-G_step = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.5).minimize(G_loss, var_list=g_vars)
-D_step = tf.train.AdamOptimizer(learning_rate=lr, beta1=0.5).minimize(D_loss, var_list=d_vars)
+
+
+G_global_step = tf.Variable(0, trainable=False)
+D_global_step = tf.Variable(0, trainable=False)
+
+G_learning_rate = tf.train.exponential_decay(lr, G_global_step, decay_steps, 
+                                             decay_rate, staircase=True)
+D_learning_rate = tf.train.exponential_decay(lr, D_global_step, decay_steps, 
+                                             decay_rate, staircase=True)
+
+
+G_opt = tf.train.AdamOptimizer(learning_rate=G_learning_rate, beta1=0.5)
+G_step = G_opt.minimize(G_loss, var_list=g_vars, global_step=G_global_step)
+D_opt = tf.train.AdamOptimizer(learning_rate=D_learning_rate, beta1=0.5)
+D_step = D_opt.minimize(D_loss, var_list=d_vars, global_step=D_global_step)
 
 # summary
 G_summary = tl.summary({rec_loss_a: 'rec_loss_a',
@@ -234,7 +256,6 @@ except:
 
 
 # train
-iters_per_epoch = int(min_n/batch_size)
 overall_it = 0
 try:
 
@@ -257,8 +278,8 @@ try:
 
             # display
             if (it + 1) % 1 == 0:
-                print("Epoch: (%3d/%5d) iteration: (%5d/%5d)" % (ep+1,n_epochs, it+1, iters_per_epoch))
-                
+                print("Epoch: (%3d/%5d) iteration: (%5d/%5d) lr: %f" 
+                      % (ep+1,n_epochs, it+1, iters_per_epoch, sess.run(G_opt._lr)))
         s_cal = sess.run(rec_a1, feed_dict={input_a: source_train_data[:n_s]})
         t_rec = sess.run(rec_a1, feed_dict={input_a: target_train_data[:n_t]})
         
