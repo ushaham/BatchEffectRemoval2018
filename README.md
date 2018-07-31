@@ -27,10 +27,10 @@ CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "mlp" \
 --experiment_name c15_beta.2_gamma10.0_delta.1_cytof_mlp
 
 ''' calibration of scRNA-seq data '''
-CUDA_VISIBLE_DEVICES=0 python calibrate.py --n_epochs 1000 --data_type "other" \
+CUDA_VISIBLE_DEVICES=0 python calibrate.py --n_epochs 1200 --data_type "other" \
 --data_path './Data/scRNA-seq' --model "mlp" --code_dim 20 \
---beta .05 --gamma 1. --delta .1 \
---experiment_name c20_beta.05_gamma1.0_delta.1_scRNA-seq_mlp
+--beta .01 --gamma 1. --delta .1 \
+--experiment_name c25_beta.01_gamma1.0_delta.1_scRNA-seq_mlp
 
 
 ''' after running calibration of cytof data '''
