@@ -209,7 +209,7 @@ for i in range(np.min([3,target.shape[1]])):
     plt.legend(['target before cal.', 'source before cal.'], loc=0 ,prop={'size':16})
     if data_type == "cytof":
         plt.title(marker_names[i])
-        fig.savefig(plots_dir+'/'+marker_names[i]+'before_cal.png')
+        fig.savefig(plots_dir+'/'+marker_names[i]+'before_cal.eps', format='eps')
     plt.show(block=False) 
     fig = plt.figure()
     a2 = fig.add_subplot(111)
@@ -219,7 +219,7 @@ for i in range(np.min([3,target.shape[1]])):
     plt.legend(['target after cal.', 'source after cal.'], loc=0 ,prop={'size':16})
     if data_type == "cytof":
         plt.title(marker_names[i])
-        fig.savefig(plots_dir+'/'+marker_names[i]+'after_cal.png')
+        fig.savefig(plots_dir+'/'+marker_names[i]+'after_cal.eps', format='eps')
     plt.show(block=False)
     
 input("Press Enter to view correlations")   
@@ -272,7 +272,7 @@ plt.legend(['before calib.', 'after calib.'], loc=2)
 plt.yticks([])
 plt.title('difference of correlation coefficients')
 plt.show(block=False)
-fig.savefig(plots_dir+'/correl.png')
+fig.savefig(plots_dir+'/correl.eps', format='eps')
 
 input("Press Enter to view MMD analysis") 
 plt.close("all")
