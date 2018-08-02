@@ -283,7 +283,6 @@ try:
         s_cal = sess.run(rec_a1, feed_dict={input_a: source_train_data[:n_s]})
         t_rec = sess.run(rec_a1, feed_dict={input_a: target_train_data[:n_t]})
         
-        save_dir = './output/%s/sample_training' % experiment_name
         save_path = saver.save(sess, '%s/Epoch_%d.ckpt' % (ckpt_dir, ep))
         print('Model is saved in file: %s' % save_path)
 except:
