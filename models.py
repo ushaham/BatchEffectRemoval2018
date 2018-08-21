@@ -248,7 +248,7 @@ def _feedforward(inputs,
     Returns:
       A 2d tensor with the same shape and dtype as inputs
     '''
-    with tf.variable_scope("multihead_attention", reuse=reuse):
+    with tf.variable_scope("forward", reuse=reuse):
         
         input_dim = inputs.get_shape().as_list()[-1]
         
