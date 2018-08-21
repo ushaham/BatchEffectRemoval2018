@@ -78,7 +78,7 @@ def mlp():
 def _resnet_block_v2(inputs, 
                      block_dim, 
                      is_training,
-                     reuse=None):
+                     reuse=tf.AUTO_REUSE):
     
     with tf.variable_scope("resnet_block", reuse=reuse):
         shortcut = inputs
@@ -159,7 +159,7 @@ def resnet():
 def _normalize(inputs, 
               epsilon = 1e-8,
               scope="ln",
-              reuse=None):
+              reuse=tf.AUTO_REUSE):
     '''Applies layer normalization.
     
     Args:
@@ -190,7 +190,7 @@ def _multihead_attention(keys,
                          num_units=20, 
                          num_heads=5, 
                          dropout_rate=0,
-                         reuse=None):
+                         reuse=tf.AUTO_REUSE):
     '''Applies multihead attention.
     
     Args:
@@ -236,7 +236,7 @@ def _multihead_attention(keys,
 
 def _feedforward(inputs, 
                  num_units=20,
-                 reuse=None):
+                 reuse=tf.AUTO_REUSE):
     '''Point-wise feed forward net.
     
     Args:
