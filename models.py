@@ -220,8 +220,7 @@ def _multihead_attention(keys,
         attn_weights_ = tf.nn.softmax(attn_weights_) # (h*N, c) 
         
         # Weighted sum
-        outputs = tf.matmul(proj_, tf.transpose(attn_weights_)) # (h*N, h*N)
-        outputs = tf.diag_part(outputs) # (h*N)
+        outputs = tf.reduce_sum(tf.multiply(proj_, attn_weights_),1, keep_dims=False)# (h*N)
         
         # Restore shape
         outputs = tf.concat(tf.split(tf.expand_dims(outputs,1), num_heads, axis=0), axis=1) # (N, h)
