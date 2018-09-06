@@ -201,11 +201,13 @@ G_learning_rate = tf.train.exponential_decay(lr, G_global_step, decay_steps,
 D_learning_rate = tf.train.exponential_decay(lr, D_global_step, decay_steps, 
                                              decay_rate, staircase=True)
 
+update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
 
 G_opt = tf.train.AdamOptimizer(learning_rate=G_learning_rate, beta1=0.5)
-G_step = G_opt.minimize(G_loss, var_list=g_vars, global_step=G_global_step)
 D_opt = tf.train.AdamOptimizer(learning_rate=D_learning_rate, beta1=0.5)
-D_step = D_opt.minimize(D_loss, var_list=d_vars, global_step=D_global_step)
+with tf.control_dependencies(update_ops):
+    G_step = G_opt.minimize(G_loss, var_list=g_vars, global_step=G_global_step)
+    D_step = D_opt.minimize(D_loss, var_list=d_vars, global_step=D_global_step)
 
 # summary
 G_summary = tl.summary({rec_loss_a: 'rec_loss_a',
