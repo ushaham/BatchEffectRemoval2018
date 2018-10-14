@@ -34,7 +34,7 @@ if os.path.exists('./output'):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--use_test', dest='use_test', action='store_true', default=False, 
-                    help="wether there are separate test data files")
+                    help="whether there are separate test data files")
 parser.add_argument('--n_epochs', dest='n_epochs', type=int, default=1000, 
                     help="number of training epochs")
 parser.add_argument('--batch_size', dest='batch_size', type=int, default=64, 
