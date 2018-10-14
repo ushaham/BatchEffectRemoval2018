@@ -20,13 +20,13 @@ Repository for the paper "Batch Effect Removal via Batch-Free Encoding" by Uri S
 # Usage examples:
 The following usage examples were used to obtain the results reported on the manuscript:
 
-* Calibration of cytof data
+* Calibration of cytof data \
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --data_type "cytof" --model "mlp" \
 --n_epochs 1000 --AE_type "VAE" --code_dim 15 --beta .2 --gamma 5. --delta .05 \
 --data_path './Data'  --use_test \
 --experiment_name c15_beta.2_gamma5.0_delta.05_cytof_mlp
 
-* Calibration of scRNA-seq data
+* Calibration of scRNA-seq data \
 CUDA_VISIBLE_DEVICES=0 python calibrate.py --n_epochs 1500 --data_type "other" \
 --data_path './Data/scRNA-seq' --model "mlp" --code_dim 20 \
 --beta .1 --gamma 5. --delta .1 --decay_epochs 500 \
