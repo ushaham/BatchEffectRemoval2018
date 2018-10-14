@@ -364,6 +364,35 @@ def transformer():
     
     return Enc, Dec_a, Dec_b, Disc
 
+def Cell_type_classifier():
+
+    def cell_type_classifier(inputs, 
+                             num_classes=5, 
+                             is_training=False,
+                             dropout_keep_prob=0.5,
+                             prediction_fn=slim.softmax,
+                             scope='classifier'):
+      
+      
+      end_points = {}
+        
+      with tf.variable_scope('cell_type_classifier', reuse=tf.AUTO_REUSE):
+        net = fc(inputs, 20, scope='fc1')
+        net = end_points['fc1'] = lrelu(net)
+        net = fc(net, 20, scope='fc2')
+        net = end_points['fc2'] = lrelu(net)
+        net = slim.dropout(
+            net, dropout_keep_prob, is_training=is_training, scope='dropout')
+        logits = end_points['Logits'] = slim.fully_connected(
+            net, num_classes, activation_fn=None, scope='logits')
+    
+      end_points['Predictions'] = prediction_fn(logits, scope='Predictions')
+      
+      return logits, end_points
+    
+    return cell_type_classifier
+
+
 
         
     

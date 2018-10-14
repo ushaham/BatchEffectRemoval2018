@@ -67,6 +67,17 @@ def make_dataset(data, batch_size = 100, buffer_size=4096):
     dataset = dataset.repeat()
     return dataset
 
+def make_dataset2(data, batch_size=100, buffer_size=4096, repeat=True, shuffle=True):
+    dataset = tf.data.Dataset.from_tensor_slices(data)
+    if shuffle:
+        dataset = dataset.shuffle(buffer_size)
+    if batch_size is not None:    
+        dataset = dataset.batch(batch_size)
+        #dataset = dataset.apply(tf.contrib.data.batch_and_drop_remainder(batch_size)) # instead of previous row
+    if repeat:
+        dataset = dataset.repeat()
+    return dataset
+
 def get_models(model_name):
     return getattr(models, model_name)()
 
