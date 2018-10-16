@@ -1,5 +1,6 @@
 *.pyc
 __pycache__/
-/data/
+/Data/new/
+/Data/multi_inst/
 /output/
 
