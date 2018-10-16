@@ -53,7 +53,7 @@ parser.add_argument('--gamma', dest='gamma', type=float, default=100,
                     help="adversarial loss coefficient")
 parser.add_argument('--delta', dest='delta', type=float, default=.1, 
                     help="gp loss coefficient")
-parser.add_argument('--data_path', dest='data_path', default='./Data', 
+parser.add_argument('--data_path', dest='data_path', default='./Data/multi_inst', 
                     help="path to data folder")
 parser.add_argument('--data_type', dest='data_type', default='cytof', 
                     help="type of data, cytof or other")

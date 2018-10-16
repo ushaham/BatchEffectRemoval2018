@@ -58,6 +58,7 @@ source_train_code = np.loadtxt(calibrated_data_dir+'/source_train_code.csv'
                                          , delimiter=',')
 target_train_code = np.loadtxt(calibrated_data_dir+'/target_train_code.csv'
                                          , delimiter=',')
+
 if use_test:
     source_test_data = np.loadtxt(calibrated_data_dir+'/source_test_data.csv', delimiter=',')
     target_test_data = np.loadtxt(calibrated_data_dir+'/target_test_data.csv', delimiter=',')
@@ -98,6 +99,8 @@ if use_test:
     reconstructed_source_test_data_pca = pca.transform(reconstructed_source_test_data)
     calibrated_source_test_data_pca = pca.transform(calibrated_source_test_data)
     reconstructed_target_test_data_pca = pca.transform(reconstructed_target_test_data)
+    
+    
 
 # plot reconstructions
 sh.scatterHist(target_train_data_pca[:,pc1], target_train_data_pca[:,pc2], 
